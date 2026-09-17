@@ -49,7 +49,7 @@ export const AppThemeProvider = ({ children }: AppThemeProviderProps) => {
                         : {
                             // ---- CONFIGURAZIONE DARK THEME ----
                             primary: {
-                                main: '#5b6ee4',
+                                main: '#383d5b',
                             },
                             secondary: {
                                 main: '#f50057',
@@ -80,7 +80,7 @@ export const AppThemeProvider = ({ children }: AppThemeProviderProps) => {
 export const useThemeSwitcher = (): ThemeSwitcherContextType => {
     const context = useContext(ThemeSwitcherContext);
     if (!context) {
-        throw new Error("useThemeSwitcher deve essere usato all'interno di un AppThemeProvider");
+        throw new Error("useTheme deve essere usato all'interno di un ThemeProvider");
     }
     return context;
 };
