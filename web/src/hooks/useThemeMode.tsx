@@ -1,86 +1,91 @@
-import React, { createContext, useContext, useState, type ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState
+} from "react";
 import { ThemeProvider, createTheme, type Theme } from "@mui/material/styles";
-import type { ThemeSwitcherContextType } from "../interfaces";
-import { CssBaseline } from "@mui/material";
-
+import type {
+  ThemeSwitcherContextType,
+  ProviderProps,
+} from "../interfaces";
+import CssBaseline from "@mui/material/CssBaseline";
 // 2. Creiamo il contesto con un valore di default nullo
-const ThemeSwitcherContext = createContext<ThemeSwitcherContextType | null>(null);
+const ThemeSwitcherContext = createContext<ThemeSwitcherContextType | null>(
+  null,
+);
 
-interface AppThemeProviderProps {
-    children: ReactNode;
-}
+export const AppThemeProvider = ({ children }: ProviderProps) => {
+  const [mode, setMode] = useState<"light" | "dark">(() => {
+    const savedMode = localStorage.getItem("themeMode");
+    return savedMode === "light" || savedMode === "dark" ? savedMode : "light";
+  });
 
-export const AppThemeProvider = ({ children }: AppThemeProviderProps) => {
-    const [mode, setMode] = useState<"light" | "dark">(() => {
-        const savedMode = localStorage.getItem("themeMode");
-        return (savedMode === "light" || savedMode === "dark") ? savedMode : "light";
+  const toggleColorMode = () => {
+    setMode((prevMode) => {
+      const newMode = prevMode === "light" ? "dark" : "light";
+      localStorage.setItem("themeMode", newMode);
+      return newMode;
     });
+  };
 
-    const toggleColorMode = () => {
-        setMode((prevMode) => {
-            const newMode = prevMode === "light" ? "dark" : "light";
-            localStorage.setItem("themeMode", newMode);
-            return newMode;
-        });
-    };
-
-    // 5. Creiamo dinamicamente il tema MUI in base allo stato 'mode'
-    // Puoi inserire qui le personalizzazioni globali (typography, shape, palette secondarie)
-    const theme: Theme = React.useMemo(
-        () =>
-            createTheme({
-                palette: {
-                    mode,
-                    ...(mode === "light"
-                        ? {
-                            // ---- CONFIGURAZIONE LIGHT THEME ----
-                            primary: {
-                                main: '#3f51b5',
-                                contrastText: '#0a0a0a',
-                            },
-                            secondary: {
-                                main: '#f50057',
-                            },
-                            background: {
-                                paper: '#f9f8f8',
-                            },
-                            divider: 'rgba(58, 58, 58, 0.28)',
-                        }
-                        : {
-                            // ---- CONFIGURAZIONE DARK THEME ----
-                            primary: {
-                                main: '#383d5b',
-                            },
-                            secondary: {
-                                main: '#f50057',
-                            },
-                            background: {
-                                default: '#0d0d0d',
-                                paper: '#1a1a1a',
-                            },
-                            divider: 'rgba(214,214,214,0.12)',
-                        }),
+  // 5. Creiamo dinamicamente il tema MUI in base allo stato 'mode'
+  // Puoi inserire qui le personalizzazioni globali (typography, shape, palette secondarie)
+  const theme: Theme = React.useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+          ...(mode === "light"
+            ? {
+                // ---- CONFIGURAZIONE LIGHT THEME ----
+                primary: {
+                  main: "#3f51b5",
+                  contrastText: "#e8e8e8",
                 },
+                secondary: {
+                  main: "#f50057",
+                },
+                background: {
+                  paper: "#f9f8f8",
+                },
+                divider: "rgba(58, 58, 58, 0.28)",
+              }
+            : {
+                // ---- CONFIGURAZIONE DARK THEME ----
+                primary: {
+                  main: "#4053bd",
+                },
+                secondary: {
+                  main: "#f50057",
+                },
+                background: {
+                  default: "#0d0d0d",
+                  paper: "#1a1a1a",
+                },
+                divider: "rgba(214,214,214,0.12)",
+              }),
+        },
+      }),
+    [mode],
+  );
 
-            }),
-        [mode]
-    );
-
-    return (
-        <ThemeSwitcherContext.Provider value={{ mode, toggleColorMode }}>
-            <ThemeProvider theme={theme}>
-                <CssBaseline />
-                {children}
-            </ThemeProvider>
-        </ThemeSwitcherContext.Provider>
-    );
+  return (
+    <ThemeSwitcherContext.Provider value={{ mode, toggleColorMode }}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
+    </ThemeSwitcherContext.Provider>
+  );
 };
 
 // 6. Il Custom Hook da esportare e usare nei componenti
 export const useThemeSwitcher = (): ThemeSwitcherContextType => {
-    const context = useContext(ThemeSwitcherContext);
-    if (!context) {
-        throw new Error("useTheme deve essere usato all'interno di un ThemeProvider");
-    }
-    return context;
+  const context = useContext(ThemeSwitcherContext);
+  if (!context) {
+    throw new Error(
+      "useTheme deve essere usato all'interno di un ThemeProvider",
+    );
+  }
+  return context;
 };
