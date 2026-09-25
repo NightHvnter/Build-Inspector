@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace Dto;
+namespace backend.Dto;
 
 public class CpuDto
 {
