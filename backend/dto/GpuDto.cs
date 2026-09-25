@@ -1,4 +1,4 @@
-namespace backend.dto;
+namespace dto;
 
 public class GpuDto
 {

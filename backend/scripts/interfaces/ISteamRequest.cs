@@ -1,4 +1,4 @@
-namespace backend.scripts.interfaces;
+namespace scripts.interfaces;
 
 public interface ISteamRequest
 {

@@ -1,9 +1,9 @@
 namespace webapi;
 
 using Microsoft.AspNetCore.Mvc;
-using backend.repository;
-using backend.repository.interfaces;
-using backend.repository.services;
+using repository;
+using repository.interfaces;
+using repository.services;
 
 [ApiController]
 [Route("api/[controller]/[action]")]

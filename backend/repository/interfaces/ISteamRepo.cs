@@ -1,4 +1,4 @@
-namespace backend.repository.interfaces;
+namespace repository.interfaces;
 
 public interface ISteamRepo
 {

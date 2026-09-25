@@ -1,4 +1,4 @@
-namespace backend.repository.interfaces;
+namespace repository.interfaces;
 
 using System.Text.Json.Serialization;
 

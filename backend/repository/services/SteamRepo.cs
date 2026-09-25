@@ -1,9 +1,9 @@
-namespace backend.repository.services;
+namespace repository.services;
 
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using backend.repository.interfaces;
-using backend.scripts;
+using repository.interfaces;
+using scripts;
 
 public class SteamRepo : ISteamRepo
 {

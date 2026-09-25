@@ -1,6 +1,6 @@
-﻿namespace backend.scripts;
+﻿namespace scripts;
 
-using backend.scripts.interfaces;
+using scripts.interfaces;
 
 // https://store.steampowered.com/api/appdetails?appids={appid}
 // https://store.steampowered.com/api/storesearch/?term={string}%27s&l=english&cc=US
