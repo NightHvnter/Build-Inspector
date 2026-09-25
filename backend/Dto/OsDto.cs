@@ -1,3 +1,5 @@
+namespace backend.Dto;
+
 public enum OsFamily
 {
     Windows,
@@ -7,6 +9,6 @@ public enum OsFamily
 
 public class OsDto
 {
-    public OsFamily Family { get; set; }
-    public string? Version { get; set; }    
+    public OsFamily? Family { get; set; } = null;
+    public string? Version { get; set; } = null;
 }
