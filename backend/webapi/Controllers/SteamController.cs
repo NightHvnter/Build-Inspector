@@ -2,17 +2,42 @@ namespace webapi;
 
 using Microsoft.AspNetCore.Mvc;
 using backend.repository;
+using backend.repository.interfaces;
 using backend.repository.services;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-public class SteamController : ControllerBase
+public class SteamController(ISteamRepo repo) : ControllerBase
 {
+    private readonly ISteamRepo _repo = repo;
+    
     [HttpGet]
     public async Task<IActionResult> GetAppList(string keyword)
     {
-        var games = await SteamRepo.SearchGames(keyword);
+        var data = await _repo.SearchGames(keyword);
 
-        return Ok(new {games});
+        return Ok(data);
+    }
+    [HttpGet]
+    public async Task<IActionResult> GetGameDetails(int appid)
+    {
+        var data = await _repo.GetGameDetails(appid);
+
+        return Ok(data);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetGameRequirements(int appid)
+    {
+        var gameDetails = await _repo.GetGameDetails(appid);
+
+        if (gameDetails == null)
+        {
+            return NotFound();
+        }
+
+        var data = _repo.GetCleanSystemRequirements(gameDetails);
+
+        return Ok(data);
     }
 }
