@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 3,
   "targets": {
     "net10.0": {}
   },
@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/nighthunter/Projects/Build-Inspector/backend/Dto/Dto.csproj",
+      "projectUniqueName": "/home/nighthunter/Desktop/BuildInspector/Build-Inspector/backend/Dto/Dto.csproj",
       "projectName": "Dto",
-      "projectPath": "/home/nighthunter/Projects/Build-Inspector/backend/Dto/Dto.csproj",
+      "projectPath": "/home/nighthunter/Desktop/BuildInspector/Build-Inspector/backend/Dto/Dto.csproj",
       "packagesPath": "/home/nighthunter/.nuget/packages/",
-      "outputPath": "/home/nighthunter/Projects/Build-Inspector/backend/Dto/obj/",
+      "outputPath": "/home/nighthunter/Desktop/BuildInspector/Build-Inspector/backend/Dto/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/nighthunter/.nuget/NuGet/NuGet.Config"
@@ -26,11 +26,11 @@
         "net10.0"
       ],
       "sources": {
+        "/usr/lib/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net10.0": {
-          "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {}
         }
@@ -45,11 +45,10 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.400"
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net10.0": {
-        "framework": "net10.0",
         "targetAlias": "net10.0",
         "imports": [
           "net461",
@@ -67,7 +66,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/home/nighthunter/.dotnet/sdk/10.0.401/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.112/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",
