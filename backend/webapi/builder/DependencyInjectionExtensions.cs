@@ -1,7 +1,7 @@
-using backend.repository.interfaces;
-using backend.repository.services;
+using repository.interfaces;
+using repository.services;
 
-namespace backend.webapi.builder;
+namespace webapi.builder;
 
 public static class DependencyInjectionExtensions
 {
