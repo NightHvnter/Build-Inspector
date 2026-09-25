@@ -1,4 +1,6 @@
-﻿public class CpuDto
+﻿namespace backend.dto;
+
+public class CpuDto
 {
     public string? Family { get; set; } = null;
     public int? Generation { get; set; } = null;

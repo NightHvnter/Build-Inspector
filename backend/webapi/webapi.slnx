@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="webapi.csproj" />
+  <Project Path="../dto/dto.csproj" />
+  <Project Path="../repository/repository.csproj" />
+  <Project Path="../scripts/scripts.csproj" />
+</Solution>
