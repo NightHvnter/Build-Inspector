@@ -2,5 +2,6 @@
   <Project Path="backend.csproj" />
   <Project Path="Dto/Dto.csproj" />
   <Project Path="Repository/Repository.csproj" />
+  <Project Path="Scripts/Scripts.csproj" />
   <Project Path="Service/Service.csproj" />
 </Solution>
