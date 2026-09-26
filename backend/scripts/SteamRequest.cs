@@ -33,11 +33,6 @@ public class SteamRequest : ISteamRequest
 
     }
 
-    public void GetGamesSpecs(int appid)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task<string?> SearchGames(string keyword)
     {
         string? body = null;

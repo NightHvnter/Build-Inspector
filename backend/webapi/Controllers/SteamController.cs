@@ -1,4 +1,4 @@
-namespace webapi;
+namespace webapi.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
 using repository;
