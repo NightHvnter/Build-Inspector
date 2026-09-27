@@ -19,6 +19,7 @@ import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOS } from "../hooks/useOs";
+import { useUser } from "../hooks/useUser";
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
@@ -26,6 +27,7 @@ export default function Home() {
   const stepperRef = useRef<HTMLDivElement | null>(null);
   const os = useOS();
   const navigate = useNavigate();
+  const user = useUser();
 
   const handleScroll = () => {
     stepperRef.current?.scrollIntoView({ 
@@ -38,7 +40,7 @@ export default function Home() {
     if(activeStep == 0) {
       window.open(`${window.location.origin}/download/${os?.toLocaleLowerCase()}`, '_blank');
     } else if(activeStep == 1) {
-      navigate(`/account/sign-up?`);
+      user.HandleOpen();
     }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };

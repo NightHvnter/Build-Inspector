@@ -1,14 +1,17 @@
-import { ThemeProvider } from "./hooks"
-import Router from "./Router"
+import { ThemeProvider } from "./hooks";
+import { UserProvider } from "./hooks/useUser";
+import Router from "./Router";
 
 function App() {
   return (
     <>
-      <ThemeProvider>
-        <Router />
-      </ThemeProvider>
+      <UserProvider>
+        <ThemeProvider>
+          <Router />
+        </ThemeProvider>
+      </UserProvider>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
