@@ -1,4 +1,6 @@
 using webapi.builder;
+using database;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddRepositories();
+builder.Services.AddScoped<ContextDb>();
 
 var app = builder.Build();
 
