@@ -17,7 +17,6 @@ import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 
 // react //
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useOS } from "../hooks/useOs";
 import { useUser } from "../hooks/useUser";
 
@@ -27,7 +26,6 @@ export default function Home() {
 
   const stepperRef = useRef<HTMLDivElement | null>(null);
   const os = useOS();
-  const navigate = useNavigate();
   const user = useUser();
 
   const handleScroll = () => {
@@ -40,7 +38,7 @@ export default function Home() {
   const handleNext = () => {
     switch(activeStep) {
       case 0:
-        //window.open(`${window.location.origin}/download/${os?.toLocaleLowerCase()}`, '_blank');
+        window.open(`${window.location.origin}/download/${os?.toLocaleLowerCase()}`, '_blank');
         nextStep();
         break
       case 1:
