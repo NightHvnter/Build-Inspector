@@ -18,7 +18,6 @@ import AuthModal from "./AuthModal";
 export default function Appbar() {
   const theme = useTheme();
   const nativigate = useNavigate();
-  const user = useUser();
 
   return (
     <>
@@ -80,7 +79,6 @@ export default function Appbar() {
           </Tooltip>
         </Toolbar>
       </AppBar>
-      <AuthModal Open={user.Open} HandleClose={user.HandleClose} AuthType={"login"}></AuthModal>
     </>
   );
 }

@@ -39,8 +39,7 @@ export const AppThemeProvider = ({ children }: ProviderProps) => {
             ? {
                 // ---- CONFIGURAZIONE LIGHT THEME ----
                 primary: {
-                  main: "#3f51b5",
-                  contrastText: "#e8e8e8",
+                  main: "#3f51b5"
                 },
                 secondary: {
                   main: "#f50057",
@@ -49,6 +48,10 @@ export const AppThemeProvider = ({ children }: ProviderProps) => {
                   paper: "#f9f8f8",
                 },
                 divider: "rgba(58, 58, 58, 0.28)",
+                text: {
+                  primary: "rgb(24, 24, 24)",
+                  secondary: "rgb(70, 70, 70)"
+                }
               }
             : {
                 // ---- CONFIGURAZIONE DARK THEME ----
@@ -63,6 +66,10 @@ export const AppThemeProvider = ({ children }: ProviderProps) => {
                   paper: "#1a1a1a",
                 },
                 divider: "rgba(214,214,214,0.12)",
+                text: {
+                  primary: "rgb(250, 250, 250)",
+                  secondary: "rgb(230, 230, 230)"
+                }
               }),
         },
       }),

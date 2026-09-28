@@ -23,6 +23,7 @@ import { useUser } from "../hooks/useUser";
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
+  const nextStep = () => setActiveStep((prevActiveStep) => prevActiveStep + 1);
 
   const stepperRef = useRef<HTMLDivElement | null>(null);
   const os = useOS();
@@ -37,12 +38,18 @@ export default function Home() {
   };
 
   const handleNext = () => {
-    if(activeStep == 0) {
-      window.open(`${window.location.origin}/download/${os?.toLocaleLowerCase()}`, '_blank');
-    } else if(activeStep == 1) {
-      user.HandleOpen();
+    switch(activeStep) {
+      case 0:
+        //window.open(`${window.location.origin}/download/${os?.toLocaleLowerCase()}`, '_blank');
+        nextStep();
+        break
+      case 1:
+        if(localStorage.getItem("username")) nextStep();
+        else user.HandleOpen();
+        break
+      case 2:
+        break
     }
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   const steps = [
@@ -79,7 +86,7 @@ export default function Home() {
   const textSpecial: SxProps<Theme> = {
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
-    display: "inline-block  ",
+    display: "inline-block",
     backgroundClip: "text",
     fontSize: "2rem",
     backgroundImage:

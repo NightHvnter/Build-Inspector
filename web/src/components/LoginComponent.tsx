@@ -1,22 +1,29 @@
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import TextField from '@mui/material/TextField';
+import TextField from "@mui/material/TextField";
 interface LoginComponentProps {}
 
 export default function LoginComponent(props: LoginComponentProps) {
   return (
-    <Box sx={{width: "100%"}}>
+    <Box sx={{ width: "100%" }}>
       <Stack>
-        <Box sx={{ position: "relative" }}>
-          <Box sx={{ display: "flex", position: "relative", top: 0 }}>
-            <Box>
-              <Typography variant="h3">Build Inspector</Typography>
-            </Box>
-            <Box sx={{ flexGrow: 1 }} />
-          </Box>
+        <Box>
           <Box>
-            <TextField></TextField>
+            <Box sx={{ display: "flex", mt: 1, mx: 2 }}>
+              <Box>
+                <Typography variant="h4">Build Inspector</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ mt: 10, ml: 7.5, mr: 20}}>
+              <Typography sx={{ fontSize: "2rem" }}>Ben tornato!</Typography>
+              <Typography sx={{ fontSize: "1rem" }}>
+                Perfavore, accedi al tuo account
+              </Typography>
+              <Box>
+                <TextField></TextField>
+              </Box>
+            </Box>
           </Box>
         </Box>
         <Box sx={{ width: "50%" }}></Box>
