@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace dto;
@@ -5,12 +6,12 @@ namespace dto;
 
 public class UserDto
 {
-    [JsonPropertyName("username")]
-    public string Username { get; set; }
+    [Required][JsonPropertyName("username")]
+    public string Username { get; set; } = "";
 
-    [JsonPropertyName("email")]
-    public string Email { get; set; } 
+    [Required][JsonPropertyName("email")]
+    public string Email { get; set; } = "";
 
-    [JsonPropertyName("password")]
-    public string Password { get; set; }
+    [Required][JsonPropertyName("password")]
+    public string Password { get; set; } = "";
 }
