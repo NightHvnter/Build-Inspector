@@ -1,50 +1,50 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useState } from 'react';
+import { Navbar } from './components/Navbar';
+import { HomeCover } from './components/HomeCover';
+import { Dashboard } from './components/dashboard';
+import { BuildSummary } from './types/build';
+import './App.css';
+
+const mockBuildData: BuildSummary = {
+  id: "steam-build-1049",
+  projectName: "Cyberpunk 2077 Engine Build",
+  status: "failed",
+  durationSeconds: 120.4,
+  totalErrors: 2,
+  totalWarnings: 4,
+  timestamp: new Date().toLocaleString(),
+  logs: [
+    { id: "1", timestamp: "16:20:01", level: "info", message: "Loading Steam SDK integrations...", module: "STEAM" },
+    { id: "2", timestamp: "16:20:05", level: "info", message: "Initializing DirectX 12 render pipeline", module: "RENDER" },
+    { id: "3", timestamp: "16:20:12", level: "warn", message: "Texture memory allocation reaching threshold (85%)", module: "GPU" },
+    { id: "4", timestamp: "16:20:18", level: "warn", message: "Deprecated shader function in shadow_pass.hlsl", module: "SHADER" },
+    { id: "5", timestamp: "16:20:25", level: "error", message: "GPU Device Lost: HRESULT 0x887A0005", module: "DRIVER" },
+    { id: "6", timestamp: "16:20:26", level: "error", message: "Application crashed during rendering loop", module: "CORE" },
+  ],
+};
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const [currentView, setCurrentView] = useState<'home' | 'dashboard'>('home');
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', color: '#f8fafc' }}>
+      {/* Navbar presente sempre in alto */}
+      <Navbar 
+        currentView={currentView}
+        onGoHome={() => setCurrentView('home')}
+        onGoDashboard={() => setCurrentView('dashboard')}
+      />
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+      {/* Schermata Attiva */}
+      {currentView === 'home' ? (
+        <HomeCover onOpenDashboard={() => setCurrentView('dashboard')} />
+      ) : (
+        <Dashboard 
+          buildData={mockBuildData} 
+          onBack={() => setCurrentView('home')} 
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      )}
+    </div>
   );
 }
 
