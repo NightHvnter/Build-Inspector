@@ -4,3 +4,6 @@ backend/*/obj/*
 backend/*/bin/*
 backend/.vscode/*
 backend/webapi/buildinspkey.json
+/backend/webapi/.vs
+/backend/webapi/.vs/ProjectEvaluation
+*.bin
