@@ -1,15 +1,8 @@
-import ICpu from "./ICpu";
-import IGpu from "./IGpu";
-import IRam from "./IRam";
-
+import Cpu from "./Cpu";
 
 interface Build {
-    GetCpu: () => ICpu
-    GetGpu: () => IGpu
-    GetRam: () => IRam
+    GetCpu: () => Cpu
 }
-
-
 
 declare const Build: Build
 
