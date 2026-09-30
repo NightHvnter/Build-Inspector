@@ -1,3 +1,5 @@
+using api.extensions;
+
 namespace api
 {
     public class Program
@@ -12,6 +14,7 @@ namespace api
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddFirestore(builder.Configuration);
 
             var app = builder.Build();
 
