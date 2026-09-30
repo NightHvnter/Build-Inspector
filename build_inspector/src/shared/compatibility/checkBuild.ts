@@ -1,0 +1,1 @@
+import type { Cpu, Motherboard, CompatIssue } from '@shared/types'
