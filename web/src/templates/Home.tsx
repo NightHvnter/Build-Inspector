@@ -18,7 +18,6 @@ import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 // react //
 import { useRef, useState } from "react";
 import { useOS } from "../hooks/useOs";
-import { useUser } from "../hooks/useUser";
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
@@ -26,7 +25,6 @@ export default function Home() {
 
   const stepperRef = useRef<HTMLDivElement | null>(null);
   const os = useOS();
-  const user = useUser();
 
   const handleScroll = () => {
     stepperRef.current?.scrollIntoView({ 
@@ -42,10 +40,6 @@ export default function Home() {
         nextStep();
         break
       case 1:
-        if(localStorage.getItem("username")) nextStep();
-        else user.HandleOpen();
-        break
-      case 2:
         break
     }
   };
@@ -57,13 +51,8 @@ export default function Home() {
         "Scarica Build Inspector dalla nostra download page",
     },
     {
-      label: "Registra o Accedi",
-      description: "Registra o accedi al tuo account per proseguire",
-    },
-    {
-      label: "Seleziona e verifica",
-      description:
-        "Dopo aver effettuato l'accesso puoi iniziare a sfogliare il nostro catalogo",
+      label: "Seleziona ed esplora",
+      description: "Inizia ad esplorare Build Inspector per verificare la compatibilità del tuo gioco",
     },
   ];
 
