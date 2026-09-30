@@ -1,5 +1,6 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import Build from "./interfaces/Build";
 
 // Custom APIs for renderer
 const api = {}
@@ -10,7 +11,7 @@ const api = {}
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('build', Build)
   } catch (error) {
     console.error(error)
   }
