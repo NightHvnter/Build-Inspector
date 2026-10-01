@@ -11,25 +11,44 @@ def GetHTML(link: str) -> str:
 
         page.wait_for_selector("table#cputable")
         
-        # Tenta di selezionare "All" nel menu DataTables (se presente)
         try:
-            # Cerca il selettore del numero di righe per pagina di DataTables e seleziona "All" (-1)
             page.select_option("select[name='cputable_length']", "-1")
-            # Attende un istante che la tabella si aggiorni con tutti i dati
             page.wait_for_timeout(2000)
         except Exception:
-            # Se il menu non esiste o ha un selettore diverso, prosegue comunque
             pass
         
         html_content = page.content()
         browser.close()
     return html_content
 
-def Clean(dati_grezzi):
+def Clean(data = [], type_str = ""):
+    clean = []  
+    # Salta la prima riga (intestazione)
+    rows = data[1:] if len(data) > 1 else data
 
-    return dati_grezzi
+    if type_str == "cpu":
+        for cpu in rows:
+            if len(cpu) > 6:
+                temp = {
+                    "name": cpu[1],
+                    "cores": cpu[2],
+                    "mark": cpu[3],
+                    "socket": cpu[6]
+                }
+                clean.append(temp)
+    elif type_str == "gpu":
+        print(rows[0])
+        for gpu in rows:
+            if len(gpu) > 2:
+                temp = {
+                    "name": gpu[0],
+                    "mark": gpu[1]
+                }
+                clean.append(temp)
 
-def main():
+    return clean
+
+def GetData():
     TARGETS = [
         {"url": "https://www.cpubenchmark.net/CPU_mega_page.html", "label": "cpu"},
         {"url": "https://www.videocardbenchmark.net/gpu_list.php", "label": "gpu"}
@@ -41,7 +60,6 @@ def main():
         html = GetHTML(target["url"])
         soup = BeautifulSoup(html, "html.parser")
         
-        # Entrambi i siti usano "cputable"
         table = soup.find("table", {"id": "cputable"})
         
         if not table:
@@ -56,12 +74,16 @@ def main():
             if cols_text:
                 rows_data.append(cols_text)
                 
-        all_data[target["label"]] = Clean(rows_data)
-        all_data[target["label"]] = all_data[target["label"]][1:]
+        all_data[target["label"]] = Clean(rows_data, target["label"])
 
     return all_data
 
+def main():
+    clean_data = GetData()
+
+    with open("hardware_data_clean.json", "w", encoding="utf-8") as f:
+        json.dump(clean_data, f, indent=4)
+    print("File JSON generato con successo!")
+
 if __name__ == "__main__":
-    result = main()
-    with open("hardware_data.json", "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=4)
+    main()
