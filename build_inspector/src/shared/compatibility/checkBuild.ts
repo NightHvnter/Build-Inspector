@@ -1,1 +1,1 @@
-import type { Cpu, Motherboard, CompatIssue } from '@shared/types'
+import type { Cpu, Motherboard, CompatIssue } from '@shared/types' //importalo sempre 
