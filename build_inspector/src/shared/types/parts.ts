@@ -1,24 +1,19 @@
-export type MemoryType = 'DDR4' | 'DDR5'
-export type FormFactor = 'ATX' | 'mATX' | 'ITX'
+export type MemoryType = 'DDR4' | 'DDR5';
 
-interface PartBase { id: string; brand: string; model: string }
+interface PartBase {
+  Id: string;
+  Name: string;
+  Mark: Number;
+}
 
 export interface Cpu extends PartBase {
-  socket: string; cores: number; threads: number
-  baseClockGhz: number; tdpW: number; memoryTypes: MemoryType[]
+  Socket: string;
+  Cores: number;
 }
-export interface Gpu extends PartBase {
-  vramGb: number; lengthMm: number; tdpW: number
-}
+export interface Gpu extends PartBase {}
+
 export interface Ram extends PartBase {
-  type: MemoryType; capacityGb: number; speedMhz: number; modules: number
-}
-export interface Motherboard extends PartBase {
-  socket: string; chipset: string; formFactor: FormFactor
-  memoryType: MemoryType; ramSlots: number; maxRamGb: number
-}
-export interface Psu extends PartBase { wattage: number }
-export interface PcCase extends PartBase {
-  supportedFormFactors: FormFactor[]
-  maxGpuLengthMm: number; maxCoolerHeightMm: number
+  type: MemoryType;
+  CapacityGb: number;
+  ClockSpeed: number;
 }
