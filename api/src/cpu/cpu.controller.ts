@@ -22,14 +22,4 @@ export class CpuController {
   findOne(@Param('id') id: string) {
     return this.cpuService.findOne(+id);
   }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCpuDto: string) {
-    return this.cpuService.update(+id, updateCpuDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cpuService.remove(+id);
-  }
 }

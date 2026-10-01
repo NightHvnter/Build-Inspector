@@ -1,13 +1,22 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('cpu')
-export class Cpu {
+export class CpuEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 100 })
-  name: string;
+  @Column()
+  created_at: Date;
 
-  @Column({ unique: true })
-  email: string;
+  @Column({ length: 255 })
+  Name: string;
+
+  @Column()
+  Mark: number;
+
+  @Column()
+  Cores: number;
+
+  @Column({ length: 255 })
+  Socket: string;
 }

@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CpuEntity as Cpu } from './cpu.entity.js';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class CpuService {
-  getAll() {
-    return `This action returns all cpus`;
+  constructor(
+    @InjectRepository(Cpu)
+    private readonly CpuRepo: Repository<Cpu>,
+  ) {}
+
+  async findAll(): Promise<Cpu[]> {
+    return await this.CpuRepo.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #id cpu`;
-  }
-
-  update(id: number, updateCpuDto: string) {
-    return `This action updates a #id cpu`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #id cpu`;
+  async findOne(id: number): (Promise<Cpu | null>) {
+    return await this.CpuRepo.findOneBy({ id })
   }
 }
