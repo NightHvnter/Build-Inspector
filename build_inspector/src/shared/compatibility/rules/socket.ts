@@ -11,7 +11,7 @@ export function checkSocket
 ): 
     CompatIssue | null {
     if (!cpu || !mb) return null    //verifico se è presente una cpu
-    if (cpu.socket === mb.socket) return null   //verifico se la cpu matcha
+    if (cpu.Socket === mb.Socket) return null   //verifico se la cpu matcha
 
     //errore se non matchano
     return {
