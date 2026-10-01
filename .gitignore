@@ -5,3 +5,4 @@ api/api/dbkey.json
 /api/database/obj
 /build_inspector
 hardware*.json
+/api/node_modules

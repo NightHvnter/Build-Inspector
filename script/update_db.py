@@ -29,7 +29,7 @@ def load_to_mariadb():
 
             for cpu in data.get("cpu", []):
                 cursor.execute("""
-                    INSERT INTO Cpu (Name, Cores, Mark, socket)
+                    INSERT INTO Cpu (Name, Cores, Mark, Socket)
                     VALUES (%s, %s, %s, %s)
                 """, (
                     cpu.get("name"),
