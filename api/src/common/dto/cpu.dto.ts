@@ -1,4 +1,4 @@
-export class UpdateCpuDto {
+export class CpuDto {
     id: number;
     created_at: Date;
     Name: string;

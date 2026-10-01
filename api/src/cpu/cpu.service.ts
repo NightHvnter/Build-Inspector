@@ -10,10 +10,6 @@ export class CpuService {
     private readonly CpuRepo: Repository<Cpu>,
   ) {}
 
-  async findAll(): Promise<Cpu[]> {
-    return await this.CpuRepo.find();
-  }
-
   async findOne(id: number): (Promise<Cpu | null>) {
     return await this.CpuRepo.findOneBy({ id })
   }
