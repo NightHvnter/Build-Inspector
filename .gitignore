@@ -6,3 +6,5 @@ api/api/dbkey.json
 /build_inspector
 hardware*.json
 /api/node_modules
+/api/dist
+api/tsconfig.build.tsbuildinfo

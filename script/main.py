@@ -37,7 +37,6 @@ def Clean(data = [], type_str = ""):
                 }
                 clean.append(temp)
     elif type_str == "gpu":
-        print(rows[0])
         for gpu in rows:
             if len(gpu) > 2:
                 temp = {

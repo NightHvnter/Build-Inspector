@@ -9,8 +9,8 @@ def load_to_mariadb():
     # 2. Connessione a MariaDB (Docker)
     connection = pymysql.connect(
         host="localhost",
-        user="root",
-        password="root_password_segreta",  # Sostituisci con la tua password
+        user="app_user",
+        password="app_password",  # Sostituisci con la tua password
         database="mio_database",
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor
@@ -28,13 +28,15 @@ def load_to_mariadb():
             """)
 
             for cpu in data.get("cpu", []):
+                newMark = str(cpu["mark"]).replace(",", "")
+
                 cursor.execute("""
                     INSERT INTO Cpu (Name, Cores, Mark, Socket)
                     VALUES (%s, %s, %s, %s)
                 """, (
                     cpu.get("name"),
                     int(cpu["cores"]) if cpu.get("cores") and str(cpu["cores"]).isdigit() else None,
-                    int(cpu["mark"]) if cpu.get("mark") and str(cpu["mark"]).isdigit() else 0,
+                    int(newMark) if cpu.get("mark") and newMark.isdigit() else 0,
                     cpu.get("socket") if cpu.get("socket") != "Unknown" else None
                 ))
 
