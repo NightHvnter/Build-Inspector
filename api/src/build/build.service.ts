@@ -36,7 +36,7 @@ export class BuildService {
 
     async GetGpu(name: string): Promise<Gpu> {
         const dbdata = await this.GpuRepo.findOne({
-            where: { Name: ILike(`%${name}`)}
+            where: { Name: ILike(`%${name}%`)}
         })
         const GpuData: Gpu = {
             id: dbdata?.id,
