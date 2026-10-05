@@ -1,7 +1,5 @@
-// static //
 import * as banners from "../static/images/banners";
 
-// material //
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -12,12 +10,11 @@ import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
 
-// material styles //
 import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 
-// react //
 import { useRef, useState } from "react";
 import { useOS } from "../hooks/useOs";
+import { useUser } from "../hooks/useUser";
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
@@ -25,6 +22,7 @@ export default function Home() {
 
   const stepperRef = useRef<HTMLDivElement | null>(null);
   const os = useOS();
+  const user = useUser();
 
   const handleScroll = () => {
     stepperRef.current?.scrollIntoView({ 
@@ -40,6 +38,10 @@ export default function Home() {
         nextStep();
         break
       case 1:
+        if(localStorage.getItem("username")) nextStep();
+        else user.HandleOpen();
+        break
+      case 2:
         break
     }
   };
@@ -51,8 +53,8 @@ export default function Home() {
         "Scarica Build Inspector dalla nostra download page",
     },
     {
-      label: "Seleziona ed esplora",
-      description: "Inizia ad esplorare Build Inspector per verificare la compatibilità del tuo gioco",
+      label: "Registra o Accedi",
+      description: "Registra o accedi al tuo account per ottenere più vantaggi",
     },
   ];
 
@@ -120,7 +122,7 @@ export default function Home() {
           </Stack>
         </Box>
       </Box>
-      <Divider orientation="horizontal" variant="fullWidth" />
+      <Divider orientation="horizontal" variant="fullWidth"/>
       <Box sx={{ m: 4 }} ref={stepperRef}>
         <Stack>
           <Box sx={{maxWidth: "40%"}}>

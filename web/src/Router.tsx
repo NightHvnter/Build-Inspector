@@ -18,10 +18,6 @@ export default function Router() {
           <Route path="explore" element={<Explore />} />
           <Route path="about-us" element={<AboutUs />} />
           <Route path="*" element={<NotFound />} />
-          <Route path="account">
-            <Route path="sign-in" />
-            <Route path="sign-up" />
-          </Route>
           <Route path="download">
             <Route path="windows" />
             <Route path="linux" />
