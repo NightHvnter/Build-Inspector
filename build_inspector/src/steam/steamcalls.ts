@@ -42,7 +42,6 @@ export async function getGameDetails(appId : number) {
   const req2 : ISteamDetailsResponse = await req.json();
   const game = req2[appId];
 
-  // Steam answers 200 even for unknown games, so "success" has to be checked too
   if (!game || !game.success || !game.data) {
     return { ok: false, message: "Error: Game Not Found!" };
   }
@@ -50,8 +49,7 @@ export async function getGameDetails(appId : number) {
   return { ok: true, message: "Game Found!", data: game.data };
 }
 
-// Removes <strong>, <br>, <li>... and keeps one line per item
-export function cleanRequirements(html: string): string {
+export function cleanReq(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/li>/gi, "\n")
@@ -66,16 +64,15 @@ export function cleanRequirements(html: string): string {
 
 export async function getCleanRequirements(
   appId: number
-): Promise<IDataResponse<{ minimum: string; recommended: string }>> {
+): Promise<IDefaultResponse<{ minimum: string; recommended: string }>> {
   const details = await getGameDetails(appId);
 
   if (!details.ok || !details.data) {
     return { ok: false, message: details.message };
   }
 
-  const req = details.data.pc_requirements;
+  const req = details.data.pcreq;
 
-  // Steam sends [] when a game has no requirements
   if (Array.isArray(req)) {
     return { ok: false, message: "This game has no PC requirements listed!" };
   }
@@ -84,8 +81,8 @@ export async function getCleanRequirements(
     ok: true,
     message: "Requirements Found!",
     data: {
-      minimum: cleanRequirements(req.minimum ?? ""),
-      recommended: cleanRequirements(req.recommended ?? ""),
+      minimum: cleanReq(req.minimum ?? ""),
+      recommended: cleanReq(req.recommended ?? ""),
     },
   };
 }
