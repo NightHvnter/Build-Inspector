@@ -1,6 +1,6 @@
 export class GpuDto {
-    id: number;
-    created_at: Date;
-    Name: string;
-    Mark: number;
+    id: number | undefined;
+    created_at: Date | undefined;
+    Name: string | undefined;
+    Mark: number | undefined;
 }
