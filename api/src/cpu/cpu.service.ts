@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CpuEntity as Cpu } from './cpu.entity.js';
+import { CpuEntity as Cpu } from '../common/entity/cpu.entity.js';
 import { Repository } from 'typeorm';
 
 @Injectable()

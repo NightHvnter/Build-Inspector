@@ -1,8 +1,29 @@
-import { Controller } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { BuildService } from './build.service.js';
+import { RamDto, RamDtoWithScore } from '../common/dto/ram.dto.js';
+import { BuildDto, Scores } from './build.dto.js';
 
-@Controller('')
+@Controller('build')
 export class BuildController {
-    constructor(){}
+    constructor(private readonly buildService: BuildService){}
 
-    
+    @Get("cpu/:name")
+    GetCpu(@Param("name") name: string) {
+        return this.buildService.GetCpu(name);
+    }
+
+    @Get("gpu/:name")
+    GetGpu(@Param("name") name: string) {
+        return this.buildService.GetGpu(name);
+    }
+
+    @Post("ram/calc")
+    CalcRam(@Body("ram") ram: RamDto): RamDtoWithScore {
+        return this.CalcRam(ram);
+    }
+
+    @Post("scrore")
+    CalcScore(@Body() build: BuildDto): Scores {
+        return this.CalcScore(build);
+    }
 }

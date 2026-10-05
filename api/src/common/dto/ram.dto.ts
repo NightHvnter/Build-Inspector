@@ -7,5 +7,5 @@ export class RamDto {
 }
 
 export class RamDtoWithScore extends RamDto {
-    Score: number
+    Mark: number
 }

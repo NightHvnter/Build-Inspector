@@ -2,7 +2,7 @@ import { GpuService } from './gpu.service.js';
 import { GpuController } from './gpu.controller.js';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { GpuEntity } from './gpu.entity.js';
+import { GpuEntity } from '../common/entity/gpu.entity.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([GpuEntity])],

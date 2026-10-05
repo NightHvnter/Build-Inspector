@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import { GpuService } from './gpu.service.js';
 
-@Controller('Gpu')
+@Controller('gpu')
 export class GpuController {
   constructor(private readonly gpuService: GpuService) {}
 
-  @Get('Get/:id')
+  @Get('get/:id')
   findOne(@Param('id') id: string) {
     return this.gpuService.findOne(+id);
   }

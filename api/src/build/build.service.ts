@@ -2,19 +2,26 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { GpuDto as Gpu, CpuDto as Cpu, RamDto, RamDtoWithScore } from "../common/dto/index.js"
-import { Repository } from "typeorm";
+import {GpuEntity, CpuEntity} from "../common/entity/index.js"
+import { ILike, Repository } from "typeorm";
+import { BuildDto, Scores } from "./build.dto.js";
 
 @Injectable()
 export class BuildService {
     constructor(
-        @InjectRepository(Gpu)
-        private readonly GpuRepo: Repository<Gpu>,
-        @InjectRepository(Cpu)
-        private readonly CpuRepo: Repository<Cpu>,
+        @InjectRepository(GpuEntity)
+        private readonly GpuRepo: Repository<GpuEntity>,
+        @InjectRepository(CpuEntity)
+        private readonly CpuRepo: Repository<CpuEntity>,
     ) {}
 
     async GetCpu(name: string): Promise<Cpu> {
-        const dbdata = await this.CpuRepo.findOneBy({Name: name})
+        
+        const dbdata = await this.CpuRepo.findOne({
+            where: { Name: ILike(`%${name}%`)}
+        })
+
+        console.log(dbdata)
         const CpuData: Cpu = {
             id: dbdata?.id,
             created_at: dbdata?.created_at,
@@ -28,7 +35,9 @@ export class BuildService {
     }
 
     async GetGpu(name: string): Promise<Gpu> {
-        const dbdata = await this.GpuRepo.findOneBy({Name: name})
+        const dbdata = await this.GpuRepo.findOne({
+            where: { Name: ILike(`%${name}`)}
+        })
         const GpuData: Gpu = {
             id: dbdata?.id,
             created_at: dbdata?.created_at,
@@ -52,15 +61,28 @@ export class BuildService {
         }
     }
 
-    async CalcRam(ram: RamDto): RamDtoWithScore {
+    GetRamWithScore(ram: RamDto): RamDtoWithScore {
         const realLatency = (Number.isNaN(ram.Latency) ? Number(ram.Latency) : 16 * 2000)
         const Sv = (ram.ClockSpeedMHz * this.GetFormFactor(ram.Type)) / 100
-        
+        const Sl = Math.max(0.20 - realLatency) * 5;
+        const Sc = Math.min(ram.CapacityGb, 64) * 2;
+        const score = (Sv * 0.4) + (Sl * 0.3) + (Sc * 0.3);
+
+        return {
+            ...ram,
+            Mark: score
+        }
     }
 
-    async GetBuildScore(cpuName: string, gpuName: string, clientRam: RamDto) {
-        const cpu: Cpu = await this.GetCpu(cpuName);
-        const gpu: Gpu = await this.GetGpu(gpuName);
-        const ram: RamDtoWithScore = await this.CalcRam(clientRam);
+    async GetBuildScore(build: BuildDto): Promise<Scores> {
+        const cpu: Cpu = await this.GetCpu(build.cpu);
+        const gpu: Gpu = await this.GetGpu(build.gpu);
+        const ram: RamDtoWithScore = this.GetRamWithScore(build.ram);
+
+        return {
+            Cpu: cpu.Mark,
+            Gpu: gpu.Mark,
+            Ram: ram.Mark
+        }
     }
 }

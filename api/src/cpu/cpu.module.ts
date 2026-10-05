@@ -2,7 +2,7 @@ import { CpuService } from './cpu.service.js';
 import { CpuController } from './cpu.controller.js';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CpuEntity } from './cpu.entity.js';
+import { CpuEntity } from '../common/entity/cpu.entity.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([CpuEntity])],

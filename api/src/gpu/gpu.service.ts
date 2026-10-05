@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { GpuEntity as Gpu } from './gpu.entity.js';
+import { GpuEntity as Gpu } from '../common/entity/gpu.entity.js';
 import { Repository } from 'typeorm';
 
 @Injectable()

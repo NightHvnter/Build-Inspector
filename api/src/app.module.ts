@@ -3,6 +3,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { LoggerMiddleware } from './common/middleware/logger.middleware.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GpuModule } from './gpu/gpu.module.js';
+import { BuildModule } from './build/build.module.js';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { GpuModule } from './gpu/gpu.module.js';
       synchronize: false,
     }), 
     CpuModule,
-    GpuModule
+    GpuModule,
+    BuildModule
   ],
   controllers: [],
   providers: [],

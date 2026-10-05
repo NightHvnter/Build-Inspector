@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import { CpuService } from './cpu.service.js';
 
-@Controller('Cpu')
+@Controller('cpu')
 export class CpuController {
   constructor(private readonly cpuService: CpuService) {}
 
-  @Get('Get/:id')
+  @Get('get/:id')
   findOne(@Param('id') id: string) {
     return this.cpuService.findOne(+id);
   }

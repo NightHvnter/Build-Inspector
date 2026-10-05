@@ -1,8 +1,13 @@
-import * as dto from "../common/dto/index.js";
+import { RamDto } from "../common/dto/ram.dto.js";
+
+export class Scores {
+    Cpu: number | undefined;
+    Gpu: number | undefined;
+    Ram: number | undefined;
+}
 
 export class BuildDto {
-    Cpu: dto.CpuDto;
-    Gpu: dto.GpuDto;
-    Ram: dto.RamDto;
-    Score: number;
+    cpu: string;
+    gpu: string;
+    ram: RamDto;
 }
