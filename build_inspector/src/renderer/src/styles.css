@@ -156,10 +156,10 @@ select {
   margin: 0 auto;
 }
 
-/* ---------- Tipografia ---------- */
 .page-title {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
+  color:#c41d44;
+  margin: 0 0 2rem;
+  font-size: 4em;
   font-weight: 700;
 }
 
@@ -368,4 +368,116 @@ select {
   font-size: 0.88rem;
   color: var(--text-muted);
   text-align: center;
+}
+/* ---------- Pagina di accesso ---------- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+}
+
+.auth-form label {
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.auth-form .input {
+  margin-bottom: 1rem;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.auth-form + .callout {
+  max-width: 400px;
+}
+
+/* ---------- Pannello (post-registrazione) ---------- */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.config-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.config-field label {
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.table th,
+.table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.status-good {
+  color: #2e9e5b;
+  font-weight: 600;
+}
+
+.status-mid {
+  color: #c98a12;
+  font-weight: 600;
+}
+
+.status-bad {
+  color: var(--accent);
+  font-weight: 600;
+}
+/* ---------- Libreria (dopo l'accesso) ---------- */
+.game-card-static {
+  cursor: default;
+}
+
+.game-card-static:hover {
+  border-color: var(--border);
+}
+
+.game-desc {
+  margin: 0.75rem 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.game-reqs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.game-reqs dt {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.game-reqs dd {
+  margin: 0;
 }
