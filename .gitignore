@@ -6,3 +6,4 @@ api/api/dbkey.json
 /build_inspector
 script/hardware_data_clean.json
 node_modules
+.env
