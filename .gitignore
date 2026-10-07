@@ -2,3 +2,7 @@ backend/*/obj/*
 /node_modules
 /node_modules
 node_modules/.bin/loose-envify.cmd
+/api/dist
+/api/node_modules
+script/hardware_data_clean.json
+api/tsconfig.build.tsbuildinfo
