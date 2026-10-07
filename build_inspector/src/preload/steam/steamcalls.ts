@@ -1,5 +1,7 @@
 import { IGameDetails, IRequirements } from "./steam";
 
+// steam game list(default)
+// steam game list(search by name)
 
 export async function getSteamGameDetails (steam_appid : number | string) 
 {
