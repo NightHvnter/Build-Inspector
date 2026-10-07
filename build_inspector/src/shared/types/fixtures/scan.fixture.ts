@@ -1,4 +1,4 @@
-import type { ScannedPc } from '../types/scan';
+import type { ScannedPc } from '@shared/types/scan';
 
 export const healthyPc: ScannedPc = {
   scannedAt: '2026-10-05T10:00:00.000Z',
