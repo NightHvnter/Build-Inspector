@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GpuModule } from './gpu/gpu.module.js';
 import { BuildModule } from './build/build.module.js';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
+import { SteamModule } from './steam/steam.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true, envFilePath: "../.env"}),
@@ -26,7 +26,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }), 
     CpuModule,
     GpuModule,
-    BuildModule
+    BuildModule,
+    SteamModule
   ],
   controllers: [],
   providers: [],
