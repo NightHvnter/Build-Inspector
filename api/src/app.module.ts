@@ -4,21 +4,25 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GpuModule } from './gpu/gpu.module.js';
 import { BuildModule } from './build/build.module.js';
-import { configDotenv } from "dotenv";
-
-configDotenv()
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: process.env.DATABASE_TYPE as any,
-      host: process.env.DATABASE_HOST,
-      port: Number(process.env.DATABASE_PORT),
-      username: process.env.DATABASE_USER,
-      password: process.env.DATABASE_USER_PASSWORD,
-      database: process.env.DATABASE_NAME,
-      autoLoadEntities: Boolean(process.env.DATABASE_AUTOLOAD_ENTITIES),
-      synchronize: Boolean(process.env.DATABSE_SYNC),
+    ConfigModule.forRoot({isGlobal: true, envFilePath: "../.env"}),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: configService.get<"mariadb">("DATABASE_TYPE"),
+        host: configService.get<string>("DATABASE_HOST"),
+        port: configService.get<number>("DATABASE_PORT"),
+        username: configService.get<string>("DATABASE_USER"),
+        password: configService.get<string>("DATABASE_USER_PASSWORD"),
+        database: configService.get<string>("DATABASE_NAME"),
+        autoLoadEntities: configService.get<boolean>("DATABASE_AUTOLOAD_ENTITIES"),
+        synchronize: configService.get<boolean>("DATABSE_SYNC"),
+        logging: configService.get<boolean>("DATABSE_LOGGING")
+      })
     }), 
     CpuModule,
     GpuModule,
