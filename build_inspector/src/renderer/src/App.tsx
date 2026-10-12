@@ -1,299 +1,304 @@
-import React, { useMemo, useState } from 'react';
-import {
-  AppBar,
-  Box,
-  Button,
-  Chip,
-  CssBaseline,
-  Divider,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemText,
-  ListSubheader,
-  ThemeProvider,
-  Toolbar,
-  Typography,
-  createTheme
-} from '@mui/material';
-import { PreRegistrazione, Game } from './pre-registrazione';
-import { PostRegistrazione } from './post-registrazione';
-import { Library } from './library';
-import { AuthPage } from './Login';
+import { useEffect, useMemo, useState, type JSX } from 'react'
+import { Alert, Button, CssBaseline, Snackbar, ThemeProvider, createTheme } from '@mui/material'
+import { AuthPage } from './Login'
+import { Library } from './library'
+import { PostRegistrazione } from './post-registrazione'
+import { Icon } from './components/Icon'
+import { getSession, signOut, type AuthMode, type Profile } from './auth'
+import { STEAM_GAMES } from './games'
+import './styles.css'
 
-// --- DATI DEI GIOCHI STEAM ---
-const STEAM_GAMES: Game[] = [
-  {
-    id: 1,
-    title: 'Counter-Strike 2',
-    image: 'https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg',
-    genre: ['FPS', 'Azione', 'Competitivo'],
-    description: 'Il più famoso sparatutto tattico al mondo.',
-    reqCpu: 'Intel Core i5-750 / AMD FX-6300',
-    reqGpu: 'NVIDIA GTX 1060 / AMD RX 580',
-    reqRam: 8,
-    baseFps: 180
-  },
-  {
-    id: 2,
-    title: 'Dota 2',
-    image: 'https://cdn.akamai.steamstatic.com/steam/apps/570/header.jpg',
-    genre: ['MOBA', 'Strategia', 'Multigiocatore'],
-    description: 'Un capolavoro di strategicità profonda.',
-    reqCpu: 'Dual core Intel / AMD a 2.8 GHz',
-    reqGpu: 'NVIDIA GeForce 8600/9600GT',
-    reqRam: 4,
-    baseFps: 120
-  },
-  {
-    id: 3,
-    title: 'Cyberpunk 2077',
-    image: 'https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg',
-    genre: ['RPG', 'Open World', 'Cyberpunk'],
-    description: 'Un RPG d\'azione a mondo aperto ambientato a Night City.',
-    reqCpu: 'Intel Core i7-12700 / AMD Ryzen 7 7800X3D',
-    reqGpu: 'NVIDIA RTX 3070 / AMD RX 6800 XT',
-    reqRam: 16,
-    baseFps: 65
-  },
-  {
-    id: 4,
-    title: 'Elden Ring',
-    image: 'https://cdn.akamai.steamstatic.com/steam/apps/1245620/header.jpg',
-    genre: ['Souls-like', 'RPG', 'Open World'],
-    description: 'Esplora l\'Interregno e scopri i segreti dell\'Anello Anziano.',
-    reqCpu: 'Intel Core i7-8700K / AMD Ryzen 5 3600X',
-    reqGpu: 'NVIDIA GTX 1070 / AMD RX Vega 56',
-    reqRam: 12,
-    baseFps: 75
-  },
-  {
-    id: 5,
-    title: 'Baldur\'s Gate 3',
-    image: 'https://cdn.akamai.steamstatic.com/steam/apps/1086940/header.jpg',
-    genre: ['RPG', 'Turni', 'Scelte tattiche'],
-    description: 'Un ricco RPG ambientato nell\'universo di Dungeons & Dragons.',
-    reqCpu: 'Intel i7 8700k / AMD r5 3600',
-    reqGpu: 'NVIDIA RTX 2060 Super',
-    reqRam: 16,
-    baseFps: 70
-  },
-  {
-    id: 6,
-    title: 'Helldivers 2',
-    image: 'https://cdn.akamai.steamstatic.com/steam/apps/553850/header.jpg',
-    genre: ['Azione', 'Co-op', 'Spara e Fuggi'],
-    description: 'Lotta per la libertà in una galassia ostile.',
-    reqCpu: 'Intel Core i7-9700K',
-    reqGpu: 'NVIDIA RTX 2060',
-    reqRam: 16,
-    baseFps: 80
+type Page = 'libreria' | 'preferiti' | 'pannello' | 'auth'
+type Mode = 'dark' | 'light'
+
+function readFavorites(profile: Profile | null): number[] {
+  try {
+    const stored = profile
+      ? JSON.parse(localStorage.getItem(`bi.favorites.${profile.id}`) ?? '[]')
+      : []
+    return Array.isArray(stored)
+      ? stored.filter((id) => STEAM_GAMES.some((game) => game.id === id))
+      : []
+  } catch {
+    return []
   }
-];
+}
 
-const ALL_GENRES = ['Tutti i generi', ...Array.from(new Set(STEAM_GAMES.flatMap((g) => g.genre)))];
+function readTheme(): Mode {
+  try {
+    return localStorage.getItem('theme') === 'light' ? 'light' : 'dark'
+  } catch {
+    return 'dark'
+  }
+}
 
-type Page = 'libreria' | 'pannello' | 'auth';
-type Mode = 'dark' | 'light';
-
-const SIDEBAR_WIDTH = 270;
-
-export default function App(): React.JSX.Element {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [page, setPage] = useState<Page>('libreria');
-
-  const [selectedGenre, setSelectedGenre] = useState<string>('Tutti i generi');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-
-  const [mode, setMode] = useState<Mode>(
-    () => (localStorage.getItem('theme') as Mode | null) ?? 'dark'
-  );
-
+export default function App(): JSX.Element {
+  const [profile, setProfile] = useState<Profile | null>(getSession)
+  const [page, setPage] = useState<Page>('libreria')
+  const [authMode, setAuthMode] = useState<AuthMode>('login')
+  const [returnPage, setReturnPage] = useState<Page>('libreria')
+  const [mode, setMode] = useState<Mode>(readTheme)
+  const [notice, setNotice] = useState('')
+  const [selectedGenre, setSelectedGenre] = useState('Tutti i generi')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [favorites, setFavorites] = useState<number[]>(() => readFavorites(profile))
   const theme = useMemo(
     () =>
       createTheme({
         palette: {
           mode,
-          primary: { main: '#e0234e' },
-          ...(mode === 'dark'
-            ? { background: { default: '#16171a', paper: '#1c1d21' } }
-            : { background: { default: '#ffffff', paper: '#f6f7f9' } })
+          primary: {
+            main: mode === 'dark' ? '#f08b9e' : '#c52f50',
+            contrastText: mode === 'dark' ? '#202126' : '#fff'
+          },
+          background: {
+            default: mode === 'dark' ? '#202126' : '#f5f5f5',
+            paper: mode === 'dark' ? '#292b31' : '#fff'
+          },
+          text: {
+            primary: mode === 'dark' ? '#f0f0f2' : '#25262b',
+            secondary: mode === 'dark' ? '#b2b3bc' : '#666870'
+          },
+          divider: mode === 'dark' ? '#404149' : '#dedee3'
+        },
+        typography: {
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+          button: { textTransform: 'none', fontWeight: 600 }
         },
         shape: { borderRadius: 6 },
-        typography: {
-          fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif"
+        components: {
+          MuiButton: {
+            defaultProps: { disableElevation: true },
+            styleOverrides: { root: { padding: '8px 16px' } }
+          },
+          MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+          MuiTextField: { defaultProps: { fullWidth: true } }
         }
       }),
     [mode]
-  );
+  )
 
-  const toggleMode = () => {
-    const next: Mode = mode === 'dark' ? 'light' : 'dark';
-    setMode(next);
-    localStorage.setItem('theme', next);
-  };
-
-  const filteredGames = STEAM_GAMES.filter((game) => {
-    const matchesGenre = selectedGenre === 'Tutti i generi' || game.genre.includes(selectedGenre);
-    const matchesSearch = game.title.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesGenre && matchesSearch;
-  });
-
-  const openAuth = () => setPage('auth');
-
-  const goTo = (target: Page) => {
-    if (target === 'pannello' && !isLoggedIn) {
-      openAuth();
-      return;
+  useEffect(() => {
+    document.documentElement.dataset.theme = mode
+  }, [mode])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [page])
+  useEffect(() => {
+    const checkSession = (): void => {
+      if (profile && getSession()?.id !== profile.id) {
+        setProfile(null)
+        setFavorites([])
+        setPage('libreria')
+        setNotice('Sessione terminata. Accedi di nuovo al tuo profilo.')
+      }
     }
-    setPage(target);
-  };
-
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-    setPage('libreria');
-  };
-
-  const logout = () => {
-    setIsLoggedIn(false);
-    setPage('libreria');
-  };
-
-  const renderContent = () => {
-    if (page === 'auth' && !isLoggedIn) {
-      return <AuthPage onLoginSuccess={handleLoginSuccess} onCancel={() => setPage('libreria')} />;
+    const timer = window.setInterval(checkSession, 30_000)
+    window.addEventListener('focus', checkSession)
+    window.addEventListener('storage', checkSession)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', checkSession)
+      window.removeEventListener('storage', checkSession)
     }
+  }, [profile])
 
-    if (!isLoggedIn) {
-      return (
-        <PreRegistrazione
-          games={filteredGames}
-          allGenres={ALL_GENRES}
-          selectedGenre={selectedGenre}
-          onSelectGenre={setSelectedGenre}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onOpenAuth={openAuth}
-        />
-      );
+  const openAuth = (mode: AuthMode = 'login', destination: Page = 'libreria'): void => {
+    setAuthMode(mode)
+    setReturnPage(destination)
+    setPage('auth')
+  }
+  const navigate = (target: Page): void => {
+    if (!profile && (target === 'pannello' || target === 'preferiti')) {
+      openAuth('login', target)
+      return
     }
-
-    if (page === 'pannello') {
-      return <PostRegistrazione games={STEAM_GAMES} />;
+    setPage(target)
+  }
+  const toggleFavorite = (id: number): void => {
+    if (!profile) {
+      openAuth('register')
+      return
     }
-
-    return (
-      <Library
-        games={filteredGames}
-        allGenres={ALL_GENRES}
-        selectedGenre={selectedGenre}
-        onSelectGenre={setSelectedGenre}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
-    );
-  };
+    const next = favorites.includes(id)
+      ? favorites.filter((entry) => entry !== id)
+      : [...favorites, id]
+    try {
+      localStorage.setItem(`bi.favorites.${profile.id}`, JSON.stringify(next))
+      setFavorites(next)
+    } catch {
+      setNotice('Impossibile salvare i preferiti. Verifica lo spazio disponibile.')
+    }
+  }
+  const toggleMode = (): void => {
+    const next = mode === 'dark' ? 'light' : 'dark'
+    setMode(next)
+    try {
+      localStorage.setItem('theme', next)
+    } catch {
+      /* Keep the theme for this view. */
+    }
+  }
+  const logout = (): void => {
+    try {
+      signOut()
+      setProfile(null)
+      setFavorites([])
+      setPage('libreria')
+      setNotice('Hai effettuato l’uscita. I tuoi dati locali sono conservati.')
+    } catch {
+      setNotice('Impossibile terminare la sessione. Riprova.')
+    }
+  }
+  const title =
+    page === 'pannello'
+      ? 'La mia build'
+      : page === 'preferiti'
+        ? 'I miei preferiti'
+        : page === 'auth'
+          ? 'Il tuo profilo'
+          : 'Esplora'
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', height: '100vh' }}>
-        <Drawer
-          variant="permanent"
-          sx={{
-            width: SIDEBAR_WIDTH,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: SIDEBAR_WIDTH,
-              boxSizing: 'border-box',
-              bgcolor: 'background.paper'
-            }
-          }}
-        >
-          <Box
-            sx={{ px: 3, py: 2.5, cursor: 'pointer' }}
-            onClick={() => {
-              setPage('libreria');
-              setSelectedGenre('Tutti i generi');
-              setSearchTerm('');
-            }}
+      <div className="app-shell">
+        <aside className="sidebar" aria-label="Navigazione principale">
+          <button
+            className="brand"
+            onClick={() => navigate('libreria')}
+            aria-label="Build Inspector, vai al catalogo"
           >
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Build
-              <Box component="span" sx={{ color: 'primary.main' }}>
-                Inspector
-              </Box>
-            </Typography>
-          </Box>
-
-          <List
-            subheader={
-              <ListSubheader sx={{ bgcolor: 'transparent', lineHeight: '32px' }}>
-                INTRODUZIONE
-              </ListSubheader>
-            }
-          >
-            <ListItemButton selected={page === 'libreria'} onClick={() => goTo('libreria')}>
-              <ListItemText primary="Libreria Giochi" />
-            </ListItemButton>
-          </List>
-
-          <List
-            subheader={
-              <ListSubheader sx={{ bgcolor: 'transparent', lineHeight: '32px' }}>
-                STRUMENTI
-              </ListSubheader>
-            }
-          >
-            <ListItemButton selected={page === 'pannello'} onClick={() => goTo('pannello')}>
-              <ListItemText primary="Pannello dell'Ispettore" />
-              {!isLoggedIn && <Chip label="Accesso" size="small" variant="outlined" />}
-            </ListItemButton>
-          </List>
-
-          <Box sx={{ mt: 'auto' }}>
-            <Divider />
-            <Box sx={{ p: 2 }}>
-              {isLoggedIn ? (
+            Build <span>Inspector</span>
+          </button>
+          <div className="sidebar-label">Menu</div>
+          <nav>
+            <button
+              className={`nav-item ${page === 'libreria' ? 'active' : ''}`}
+              aria-label="Esplora giochi"
+              onClick={() => navigate('libreria')}
+              aria-current={page === 'libreria' ? 'page' : undefined}
+            >
+              <Icon name="grid" />
+              <span>Esplora giochi</span>
+              <span className="nav-count">06</span>
+            </button>
+            <button
+              className={`nav-item ${page === 'preferiti' ? 'active' : ''}`}
+              aria-label="Preferiti"
+              onClick={() => navigate('preferiti')}
+              aria-current={page === 'preferiti' ? 'page' : undefined}
+            >
+              <Icon name="heart" />
+              <span>Preferiti</span>
+              {!!favorites.length && <span className="nav-count">{favorites.length}</span>}
+            </button>
+            <button
+              className={`nav-item ${page === 'pannello' ? 'active' : ''}`}
+              aria-label="La mia build"
+              onClick={() => navigate('pannello')}
+              aria-current={page === 'pannello' ? 'page' : undefined}
+            >
+              <Icon name="chip" />
+              <span>La mia build</span>
+              {!profile && <Icon name="lock" size={14} />}
+            </button>
+          </nav>
+          <div className="sidebar-footer">
+            <div className="profile-avatar">
+              <Icon name={profile ? 'user' : 'game'} />
+            </div>
+            <div className="profile-info">
+              <strong>{profile?.name ?? 'Modalità ospite'}</strong>
+              <small>{profile ? 'Profilo locale' : 'Accesso non effettuato'}</small>
+            </div>
+            {profile && (
+              <button
+                className="icon-button"
+                onClick={logout}
+                aria-label="Esci dal profilo"
+                title="Esci dal profilo"
+              >
+                <Icon name="logout" size={18} />
+              </button>
+            )}
+          </div>
+        </aside>
+        <div className="workspace">
+          <header className="topbar">
+            <div className="breadcrumb">
+              <strong>{title}</strong>
+            </div>
+            <div className="topbar-actions">
+              <button
+                className="icon-button theme-button"
+                onClick={toggleMode}
+                aria-label={`Attiva tema ${mode === 'dark' ? 'chiaro' : 'scuro'}`}
+                title={`Tema ${mode === 'dark' ? 'chiaro' : 'scuro'}`}
+              >
+                <Icon name={mode === 'dark' ? 'sun' : 'moon'} size={19} />
+              </button>
+              {!profile && page !== 'auth' && (
                 <>
-                  <Typography variant="body2">GamerPro</Typography>
-                  <Button size="small" onClick={logout} sx={{ p: 0, minWidth: 0 }}>
-                    Esci
+                  <Button color="inherit" onClick={() => openAuth('login')}>
+                    Accedi
+                  </Button>
+                  <Button variant="contained" onClick={() => openAuth('register')}>
+                    Registrati
                   </Button>
                 </>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Non hai effettuato l'accesso
-                </Typography>
               )}
-            </Box>
-          </Box>
-        </Drawer>
-
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <AppBar
-            position="static"
-            color="inherit"
-            elevation={0}
-            sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default' }}
-          >
-            <Toolbar sx={{ justifyContent: 'flex-end', gap: 1.5 }}>
-              <Button variant="outlined" color="inherit" onClick={toggleMode}>
-                Tema {mode === 'dark' ? 'chiaro' : 'scuro'}
-              </Button>
-              {!isLoggedIn && page !== 'auth' && (
-                <Button variant="contained" onClick={openAuth}>
-                  Accedi / Registrati
-                </Button>
+              {profile && (
+                <span className="session-indicator">
+                  <span />
+                  Ciao, {profile.name}
+                </span>
               )}
-            </Toolbar>
-          </AppBar>
-
-          <Box component="main" sx={{ flex: 1, overflowY: 'auto', px: 6, py: 5 }}>
-            <Box sx={{ maxWidth: 960, mx: 'auto' }}>{renderContent()}</Box>
-          </Box>
-        </Box>
-      </Box>
+            </div>
+          </header>
+          <main className="content" id="main-content">
+            {page === 'auth' && !profile ? (
+              <AuthPage
+                key={authMode}
+                initialMode={authMode}
+                onLoginSuccess={(user) => {
+                  setProfile(user)
+                  setFavorites(readFavorites(user))
+                  setPage(returnPage)
+                  setNotice(`Benvenuto, ${user.name}. Accesso effettuato.`)
+                }}
+                onCancel={() => setPage('libreria')}
+              />
+            ) : page === 'pannello' && profile ? (
+              <PostRegistrazione key={profile.id} games={STEAM_GAMES} profileId={profile.id} />
+            ) : (
+              <Library
+                games={STEAM_GAMES}
+                favorites={favorites}
+                favoritesOnly={page === 'preferiti'}
+                selectedGenre={selectedGenre}
+                onSelectGenre={setSelectedGenre}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                profile={profile}
+                onToggleFavorite={toggleFavorite}
+                onOpenBuild={() => navigate('pannello')}
+                onOpenAuth={() => openAuth('register', 'pannello')}
+              />
+            )}
+          </main>
+        </div>
+      </div>
+      <Snackbar
+        open={!!notice}
+        autoHideDuration={5500}
+        onClose={() => setNotice('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="info" onClose={() => setNotice('')} variant="filled">
+          {notice}
+        </Alert>
+      </Snackbar>
     </ThemeProvider>
-  );
+  )
 }
