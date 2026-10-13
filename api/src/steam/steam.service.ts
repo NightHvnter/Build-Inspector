@@ -1,12 +1,10 @@
 import {
-  Inject,
   Injectable,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
 import { firstValueFrom } from 'rxjs';
-import { platform } from 'os';
+import { plainToInstance } from 'class-transformer';
+import { SteamApp } from './steam.dto.js';
 
 @Injectable()
 export class SteamService {
@@ -32,15 +30,11 @@ export class SteamService {
     const { data } = await firstValueFrom
     (
         this.http.get(`${this.store}/appdetails`, {
-        params: { appids: appId },
+        params: { appids: appId, l: "italian" },
         }),
     );
 
     const game = data[appId]?.data;
-    return {
-        appId: game.steam_appid,
-        name: game.name,
-        requirements: game.pc_requirements,
-        };
+    return plainToInstance(SteamApp, game, { excludeExtraneousValues: true});
     }
 }

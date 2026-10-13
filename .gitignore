@@ -7,3 +7,4 @@ api/api/dbkey.json
 script/hardware_data_clean.json
 node_modules
 .env
+/.vscode
