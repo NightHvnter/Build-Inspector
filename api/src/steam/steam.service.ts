@@ -10,7 +10,9 @@ import { SteamApp } from './steam.dto.js';
 export class SteamService {
   private readonly store = 'https://store.steampowered.com/api';
 
-  constructor(private readonly http: HttpService) {}
+  constructor(
+    private readonly http: HttpService
+  ) {}
 
     async getGamebyName(term : string) {
     const { data } = await firstValueFrom(

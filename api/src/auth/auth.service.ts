@@ -1,50 +1,41 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions  } from '@nestjs/jwt';
 import { UserService } from '../user/user.service.js';
 import { PasswordService } from './password.service.js';
+import { UserLoginReqDto, UserLoginResDto } from "../common/dto/user.dto.js"
+import { Repository } from 'typeorm';
+import { UserEntity } from '../user/user.entity.js';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly users: UserService,
-    private readonly passwords: PasswordService,
-    private readonly jwt: JwtService,
-    private readonly config: ConfigService,
+    private readonly userService: UserService,
+    private readonly passwordService: PasswordService,
+    private readonly userRepository: Repository<UserEntity>
   ) {}
 
-  async signUp(email: string, password: string)/*:  Promise<{accessToken: string; refreshToken: string;} | null> */ {
-    if (await this.users.findByEmail(email)) {
-      return null;
-    }
-    
+  async updateRefreshToken(id: number, hash: string | null): Promise<void> {
+      await this.userRepository.update(id, { RefreshToken: hash });
   }
 
-  async signIn(email: string, password: string) {
-    
-  }
+  async signIn(userReq: UserLoginReqDto) {
+    const user = await this.userService.findByEmail(userReq.Email);
+  
+    const valid =!!user && (await this.passwordService.verify(userReq.Password, user.Password));
+    if (!valid) throw new UnauthorizedException('Invalid credentials');
 
-  async signOut(userId: string) {
-    
-  }
+    const payload = { sub: user.Id, email: user.Email };
+    const [accessToken, refreshToken] = await this.passwordService.issueToken(payload);
 
-  private async issueTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwt.signAsync(payload, {
-        secret: this.config.getOrThrow<string>('JWT_SECRET'),
-        expiresIn: '15m',
-      }),
-      this.jwt.signAsync(payload, {
-        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
-      }),
-    ]);
-
-    /* await this.users.update(userId, {
-      refreshTokenHash: await this.passwords.hash(refreshToken),
-    });*/
+    // Salvo solo l'hash del refresh token
+    const refreshHash = await this.passwordService.hash(refreshToken);
+    await this.updateRefreshToken(user.Id, refreshHash);
 
     return { accessToken, refreshToken };
+  }
+
+  async signOut(userId: number) {
+    await this.updateRefreshToken(userId, null);
   }
 }
