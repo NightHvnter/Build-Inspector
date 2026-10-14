@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { JwtUserPayload } from '../common/dto/user.dto.js';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -15,7 +16,7 @@ export class JwtAuthGuard implements CanActivate {
     if (type !== 'Bearer' || !token) throw new UnauthorizedException();
 
     try {
-      req.user = await this.jwt.verifyAsync(token, {
+      req.user = await this.jwt.verifyAsync<JwtUserPayload>(token, {
         secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
       });
     } catch {
