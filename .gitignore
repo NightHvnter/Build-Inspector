@@ -8,3 +8,5 @@ script/hardware_data_clean.json
 node_modules
 .env
 /.vscode
+*.aider.input.history
+*.aider-desk
