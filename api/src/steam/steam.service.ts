@@ -11,7 +11,8 @@ export class SteamService {
   private readonly store = 'https://store.steampowered.com/api';
 
   constructor(
-    private readonly http: HttpService
+    private readonly http : HttpService,
+    private readonly steamapps : SteamApp [] = []
   ) {}
 
     async getGamebyName(term : string) {
@@ -27,7 +28,6 @@ export class SteamService {
     }));
   }
 
-
     async getGamebyId(appId : string) {
     const { data } = await firstValueFrom
     (
@@ -39,4 +39,10 @@ export class SteamService {
     const game = data[appId]?.data;
     return plainToInstance(SteamApp, game, { excludeExtraneousValues: true});
     }
+
+  async getGamesbyGenre(genres: string []){
+    return this.steamapps.filter((g) => 
+      genres.every((f) => g.genres?.some((genre) => 
+        genre.description.toLowerCase() === f.toLocaleLowerCase())))
+  }
 }
