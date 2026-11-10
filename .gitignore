@@ -1,6 +1,7 @@
 script/hardware_data_clean.json
 script/hardware_data.json
 node_modules
+/api/node_modules
 dist
 api/tsconfig.build.tsbuildinfo
 .env
