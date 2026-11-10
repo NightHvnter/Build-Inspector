@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { createServer, type Server } from 'node:http'
 import { afterEach, expect, it } from 'vitest'
-import { createAccountClient } from '../src/main/accountClient'
+import { createAccountClient } from '../src/preload/auth/auth'
 import type { AccountApi } from '../src/shared/auth'
 
 type Received = { path?: string; method?: string; auth?: string; body?: unknown }

@@ -1,9 +1,9 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron'
 import { accountChannels, type SignInRequest, type SignUpRequest } from '../shared/auth'
-import { createAccountClient } from './accountClient'
+import { createAccountClient } from '../preload/auth/auth'
 
 export function registerAccountIpc(rendererUrl: string): void {
-  const client = createAccountClient(process.env.BUILD_INSPECTOR_API_URL ?? 'http://localhost:3000')
+  const client = createAccountClient()
   const trustedPage = new URL(rendererUrl)
   function trusted(event: IpcMainInvokeEvent): boolean {
     const frame = event.senderFrame
