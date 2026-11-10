@@ -1,7 +1,13 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
+import { pathToFileURL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { registerAccountIpc } from './accountIpc'
+
+const rendererUrl =
+  (is.dev && process.env['ELECTRON_RENDERER_URL']) ||
+  pathToFileURL(join(__dirname, '../renderer/index.html')).href
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -27,11 +33,7 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+  mainWindow.loadURL(rendererUrl)
 }
 
 app.whenReady().then(() => {
@@ -42,6 +44,7 @@ app.whenReady().then(() => {
   })
 
   ipcMain.on('ping', () => console.log('pong'))
+  registerAccountIpc(rendererUrl)
 
   createWindow()
 

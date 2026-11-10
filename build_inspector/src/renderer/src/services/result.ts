@@ -1,5 +1,6 @@
 // Gli errori attesi sono valori da mostrare nell'interfaccia, non eccezioni.
-export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
+import type { Result } from '../../../shared/auth'
+export type { Result } from '../../../shared/auth'
 
 export async function safely<T>(operation: () => Promise<Result<T>>): Promise<Result<T>> {
   try {

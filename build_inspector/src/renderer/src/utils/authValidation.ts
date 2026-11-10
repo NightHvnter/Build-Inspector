@@ -6,7 +6,7 @@ export function validateAuthForm(mode: AuthMode, values: AuthValues): FieldError
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim()))
     errors.email = 'Inserisci un indirizzo email valido.'
   if (mode === 'register' && !values.name.trim()) errors.name = 'Inserisci il nome utente.'
-  if (mode !== 'recovery' && !values.password) errors.password = 'Inserisci la password.'
+  if (!values.password) errors.password = 'Inserisci la password.'
   if (mode === 'register' && values.confirmPassword !== values.password)
     errors.confirmPassword = 'Le password non coincidono.'
   return errors

@@ -15,9 +15,8 @@ const makeService = (): AuthService => ({
   configured: true,
   getSession: vi.fn().mockResolvedValue({ ok: true, data: null }),
   signIn: vi.fn().mockResolvedValue({ ok: true, data: user }),
-  signUp: vi.fn().mockResolvedValue({ ok: true, data: { message: 'Controlla la tua email.' } }),
-  signOut: vi.fn().mockResolvedValue({ ok: true, data: null }),
-  recoverPassword: vi.fn().mockResolvedValue({ ok: true, data: { message: 'Richiesta ricevuta.' } })
+  signUp: vi.fn().mockResolvedValue({ ok: true, data: { message: 'Account creato.' } }),
+  signOut: vi.fn().mockResolvedValue({ ok: true, data: null })
 })
 function authWrapper(service: AuthService) {
   return function Wrapper({ children }: { children: ReactNode }): React.JSX.Element {
@@ -34,10 +33,9 @@ afterEach(cleanup)
 describe('base di autenticazione', () => {
   it('senza backend non crea account, non autentica e non modifica le credenziali locali', async () => {
     localStorage.setItem('build-inspector.accounts.v1', 'vecchi dati')
-    const credentials = { email: user.email, password: 'password di test', remember: true }
+    const credentials = { email: user.email, password: 'password di test' }
     expect((await authService.signIn(credentials)).ok).toBe(false)
     expect((await authService.signUp({ ...credentials, name: user.name })).ok).toBe(false)
-    expect((await authService.recoverPassword(user.email)).ok).toBe(false)
     expect(await authService.getSession()).toEqual({ ok: true, data: null })
     expect(localStorage.length).toBe(1)
     expect(localStorage.getItem('build-inspector.accounts.v1')).toBe('vecchi dati')
@@ -47,7 +45,7 @@ describe('base di autenticazione', () => {
     const service = makeService()
     const { result } = renderHook(() => useAuth(), { wrapper: authWrapper(service) })
     await waitFor(() => expect(result.current.initializing).toBe(false))
-    const credentials = { email: user.email, password: 'password di test', remember: true }
+    const credentials = { email: user.email, password: 'password di test' }
     await act(async () => {
       await result.current.signIn(credentials)
     })
@@ -60,21 +58,16 @@ describe('base di autenticazione', () => {
     expect(result.current.user).toBeNull()
   })
 
-  it('registrazione e recupero non aprono una sessione e lasciano le istruzioni al server', async () => {
+  it('la registrazione confermata non apre automaticamente una sessione', async () => {
     const service = makeService()
     const { result } = renderHook(() => useAuth(), { wrapper: authWrapper(service) })
     await waitFor(() => expect(result.current.initializing).toBe(false))
     await act(async () => {
       expect(
         await result.current.signUp({ name: user.name, email: user.email, password: 'test' })
-      ).toEqual({ ok: true, data: { message: 'Controlla la tua email.' } })
-      expect(await result.current.recoverPassword(user.email)).toEqual({
-        ok: true,
-        data: { message: 'Richiesta ricevuta.' }
-      })
+      ).toEqual({ ok: true, data: { message: 'Account creato.' } })
     })
     expect(result.current.user).toBeNull()
-    expect(service.recoverPassword).toHaveBeenCalledWith(user.email)
   })
 
   it('un errore di rete diventa un risultato gestibile e chiude il caricamento', async () => {
@@ -85,9 +78,10 @@ describe('base di autenticazione', () => {
     })
     await waitFor(() => expect(result.current.auth.initializing).toBe(false))
     await act(async () => {
-      expect(
-        await result.current.auth.signIn({ email: user.email, password: 'test', remember: false })
-      ).toEqual({ ok: false, message: 'Servizio non raggiungibile. Riprova tra un momento.' })
+      expect(await result.current.auth.signIn({ email: user.email, password: 'test' })).toEqual({
+        ok: false,
+        message: 'Servizio non raggiungibile. Riprova tra un momento.'
+      })
     })
     expect(result.current.auth.user).toBeNull()
     expect(result.current.loading.isLoading).toBe(false)

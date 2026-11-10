@@ -81,7 +81,7 @@ it('senza backend mostra un errore nel form e resta sulla pagina di accesso', as
     target: { value: 'password di test' }
   })
   fireEvent.click(screen.getByRole('button', { name: 'Accedi' }))
-  expect(await screen.findByText(/Il servizio account non è ancora disponibile/)).toBeTruthy()
+  expect(await screen.findByText('Per usare il servizio account, apri l’app desktop.')).toBeTruthy()
   expect(screen.getByTestId('route').textContent).toBe('/login')
   expect(localStorage.length).toBe(0)
 })
@@ -103,8 +103,17 @@ it('non accetta destinazioni esterne e controlla la conferma password', () => {
       name: 'Test',
       email: 'test@example.com',
       password: 'uno',
-      confirmPassword: 'due',
-      remember: false
+      confirmPassword: 'due'
     })
   ).toEqual({ confirmPassword: 'Le password non coincidono.' })
+})
+
+it('la pagina di recupero spiega il limite senza chiedere una email', async () => {
+  renderRoute('/recupera-password?next=%2Fconfigurazione')
+  expect(
+    await screen.findByText(/non è disponibile il recupero della password via email/)
+  ).toBeTruthy()
+  expect(screen.queryByRole('textbox')).toBeNull()
+  fireEvent.click(screen.getByRole('link', { name: 'Torna al login' }))
+  expect(screen.getByTestId('route').textContent).toBe('/login?next=%2Fconfigurazione')
 })

@@ -8,12 +8,12 @@ import { authLink, getAuthDestination } from './utils/authNavigation'
 
 const titles = { login: 'Accedi', register: 'Registrazione', recovery: 'Recupera password' }
 const descriptions = {
-  login: 'Inserisci le credenziali del tuo account.',
-  register: 'Inserisci i dati per richiedere la creazione di un account.',
-  recovery: 'Inserisci l’email associata al tuo account per richiedere il recupero della password.'
+  login: 'Inserisci email e password. La sessione termina quando chiudi l’app.',
+  register: 'Crea il tuo account con un nome utente, un’email e una password.',
+  recovery: 'Al momento non è disponibile il recupero della password via email.'
 }
 
-export function AuthPage({ mode }: { mode: AuthMode }): JSX.Element {
+export function AuthPage({ mode }: { mode: AuthMode | 'recovery' }): JSX.Element {
   const { user, configured } = useAuth()
   const { search } = useLocation()
   const destination = getAuthDestination(search)
@@ -52,13 +52,12 @@ export function AuthPage({ mode }: { mode: AuthMode }): JSX.Element {
         <Typography color="text.secondary" sx={{ mb: 3 }}>
           {descriptions[mode]}
         </Typography>
-        {!configured && (
+        {!configured && mode !== 'recovery' && (
           <Alert severity="info" sx={{ mb: 3 }}>
-            Accesso, registrazione e recupero password non sono ancora attivi. Il servizio account
-            deve essere collegato.
+            Accesso e registrazione sono disponibili nell’app desktop.
           </Alert>
         )}
-        <AuthForm key={mode} mode={mode} />
+        {mode !== 'recovery' && <AuthForm key={mode} mode={mode} />}
         <Stack sx={{ alignItems: 'center', mt: 2 }}>
           {mode === 'login' ? (
             <Button component={Link} to={authLink('/recupera-password', destination)}>
@@ -66,7 +65,7 @@ export function AuthPage({ mode }: { mode: AuthMode }): JSX.Element {
             </Button>
           ) : (
             <Button component={Link} to={authLink('/login', destination)}>
-              Torna ad accedere
+              Torna al login
             </Button>
           )}
         </Stack>

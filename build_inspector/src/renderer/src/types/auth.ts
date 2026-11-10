@@ -1,29 +1,12 @@
-export interface User {
-  id: string
-  name: string
-  email: string
-}
+export type { SignInRequest, SignUpRequest, User } from '../../../shared/auth'
 
-export type AuthMode = 'login' | 'register' | 'recovery'
+export type AuthMode = 'login' | 'register'
 
 export interface AuthValues {
   name: string
   email: string
   password: string
   confirmPassword: string
-  remember: boolean
 }
 
 export type FieldErrors = Partial<Record<keyof AuthValues, string>>
-
-export interface SignInRequest {
-  email: string
-  password: string
-  remember: boolean
-}
-
-export interface SignUpRequest {
-  name: string
-  email: string
-  password: string
-}

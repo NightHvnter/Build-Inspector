@@ -11,7 +11,6 @@ export interface AuthContextValue {
   signIn: AuthService['signIn']
   signUp: AuthService['signUp']
   signOut: AuthService['signOut']
-  recoverPassword: AuthService['recoverPassword']
 }
 
 export const AuthContext = createContext<AuthContextValue>({
@@ -21,6 +20,5 @@ export const AuthContext = createContext<AuthContextValue>({
   sessionError: '',
   signIn: authService.signIn,
   signUp: authService.signUp,
-  signOut: authService.signOut,
-  recoverPassword: authService.recoverPassword
+  signOut: authService.signOut
 })

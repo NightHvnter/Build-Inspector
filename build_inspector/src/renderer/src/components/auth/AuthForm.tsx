@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Checkbox, FormControlLabel, Stack, TextField } from '@mui/material'
+import { Alert, Box, Button, Stack, TextField } from '@mui/material'
 import type { JSX } from 'react'
 import type { AuthMode } from '../../types/auth'
 import { useAuthForm } from '../../hooks/useAuthForm'
@@ -17,7 +17,10 @@ export function AuthForm({ mode }: { mode: AuthMode }): JSX.Element {
             value={values.name}
             onChange={(event) => change('name', event.target.value)}
             error={!!errors.name}
-            helperText={errors.name}
+            helperText={
+              errors.name ??
+              'Da 3 a 50 caratteri: lettere, numeri, punto, trattino o trattino basso.'
+            }
             required
             disabled={busy}
           />
@@ -26,7 +29,7 @@ export function AuthForm({ mode }: { mode: AuthMode }): JSX.Element {
           name="email"
           label="Indirizzo email"
           type="email"
-          autoComplete={mode === 'recovery' ? 'email' : 'username'}
+          autoComplete={mode === 'register' ? 'email' : 'username'}
           value={values.email}
           onChange={(event) => change('email', event.target.value)}
           error={!!errors.email}
@@ -35,17 +38,20 @@ export function AuthForm({ mode }: { mode: AuthMode }): JSX.Element {
           disabled={busy}
           slotProps={{ htmlInput: { spellCheck: false, autoCapitalize: 'none' } }}
         />
-        {mode !== 'recovery' && (
-          <PasswordField
-            name="password"
-            label="Password"
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            value={values.password}
-            error={errors.password}
-            onChange={(value) => change('password', value)}
-            disabled={busy}
-          />
-        )}
+        <PasswordField
+          name="password"
+          label="Password"
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          value={values.password}
+          error={errors.password}
+          hint={
+            mode === 'register'
+              ? 'Da 8 a 72 caratteri, con una maiuscola, una minuscola e un numero.'
+              : undefined
+          }
+          onChange={(value) => change('password', value)}
+          disabled={busy}
+        />
         {mode === 'register' && (
           <PasswordField
             name="confirmPassword"
@@ -57,25 +63,9 @@ export function AuthForm({ mode }: { mode: AuthMode }): JSX.Element {
             disabled={busy}
           />
         )}
-        {mode === 'login' && (
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={values.remember}
-                disabled={busy}
-                onChange={(event) => change('remember', event.target.checked)}
-              />
-            }
-            label="Mantieni l’accesso"
-          />
-        )}
         {feedback && <Alert severity={feedback.severity}>{feedback.message}</Alert>}
         <Button type="submit" variant="contained" disabled={busy} fullWidth>
-          {mode === 'register'
-            ? 'Registrati'
-            : mode === 'recovery'
-              ? 'Richiedi recupero password'
-              : 'Accedi'}
+          {mode === 'register' ? 'Registrati' : 'Accedi'}
         </Button>
       </Stack>
     </Box>

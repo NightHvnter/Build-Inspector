@@ -52,12 +52,6 @@ export function useAuthController(service: AuthService): AuthContextValue {
     return result
   }, [service, runWithLoading])
 
-  const recoverPassword = useCallback(
-    (email: string) =>
-      runWithLoading(() => service.recoverPassword(email), 'Invio della richiesta…'),
-    [service, runWithLoading]
-  )
-
   return {
     user,
     initializing,
@@ -65,7 +59,6 @@ export function useAuthController(service: AuthService): AuthContextValue {
     sessionError,
     signIn,
     signUp,
-    signOut,
-    recoverPassword
+    signOut
   }
 }

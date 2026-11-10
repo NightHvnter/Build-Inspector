@@ -24,8 +24,7 @@ export function useAuthForm(mode: AuthMode): AuthFormState {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    remember: false
+    confirmPassword: ''
   })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [feedback, setFeedback] = useState<Feedback | null>(null)
@@ -67,8 +66,7 @@ export function useAuthForm(mode: AuthMode): AuthFormState {
       if (mode === 'login') {
         const result = await auth.signIn({
           email,
-          password: values.password,
-          remember: values.remember
+          password: values.password
         })
         if (!active.current) return
         if (result.ok) {
@@ -77,10 +75,11 @@ export function useAuthForm(mode: AuthMode): AuthFormState {
         }
         setFeedback({ severity: 'error', message: result.message })
       } else {
-        const result =
-          mode === 'register'
-            ? await auth.signUp({ name: values.name.trim(), email, password: values.password })
-            : await auth.recoverPassword(email)
+        const result = await auth.signUp({
+          name: values.name.trim(),
+          email,
+          password: values.password
+        })
         if (!active.current) return
         setFeedback({
           severity: result.ok ? 'success' : 'error',
