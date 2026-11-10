@@ -9,7 +9,7 @@ import { SteamModule } from './steam/steam.module.js';
 import { AuthModule } from './auth/auth.module.js';
 @Module({
   imports: [
-    ConfigModule.forRoot({isGlobal: true, envFilePath: "../.env"}),
+    ConfigModule.forRoot({isGlobal: true, envFilePath: ".env"}),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -9,11 +9,11 @@ import { SteamApp } from './steam.dto.js';
 @Injectable()
 export class SteamService {
   private readonly store = 'https://store.steampowered.com/api';
+  // In-memory list used by getGamesbyGenre. A field, not a constructor
+  // parameter: Nest would try to inject a constructor parameter.
+  private readonly steamapps: SteamApp[] = [];
 
-  constructor(
-    private readonly http : HttpService,
-    private readonly steamapps : SteamApp [] = []
-  ) {}
+  constructor(private readonly http: HttpService) {}
 
     async getGamebyName(term : string) {
     const { data } = await firstValueFrom(

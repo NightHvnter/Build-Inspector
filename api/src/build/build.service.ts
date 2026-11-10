@@ -62,9 +62,12 @@ export class BuildService {
     }
 
     GetRamWithScore(ram: RamDto): RamDtoWithScore {
-        const realLatency = (Number.isNaN(ram.Latency) ? Number(ram.Latency) : 16 * 2000)
+        // Latency is the CAS latency, e.g. "16", "CL16" or "16-18-18-38". Default to CL16.
+        const cas = Number(String(ram.Latency ?? '').match(/\d+(\.\d+)?/)?.[0] ?? 16)
+        // True latency in nanoseconds: lower is better, typical RAM is 8-12 ns.
+        const realLatency = ram.ClockSpeedMHz > 0 ? (cas * 2000) / ram.ClockSpeedMHz : 20
         const Sv = (ram.ClockSpeedMHz * this.GetFormFactor(ram.Type)) / 100
-        const Sl = Math.max(0.20 - realLatency) * 5;
+        const Sl = Math.max(0, 20 - realLatency) * 5;
         const Sc = Math.min(ram.CapacityGb, 64) * 2;
         const score = (Sv * 0.4) + (Sl * 0.3) + (Sc * 0.3);
 
