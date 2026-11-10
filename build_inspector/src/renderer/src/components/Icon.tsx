@@ -1,4 +1,5 @@
-import type { CSSProperties, JSX } from 'react'
+import type { JSX } from 'react'
+import { SvgIcon } from '@mui/material'
 
 const paths = {
   grid: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
@@ -25,17 +26,14 @@ const paths = {
 
 export function Icon({
   name,
-  size = 20,
-  style
+  size = 20
 }: {
   name: keyof typeof paths
   size?: number
-  style?: CSSProperties
 }): JSX.Element {
   return (
-    <svg
-      width={size}
-      height={size}
+    <SvgIcon
+      sx={{ fontSize: size, fill: 'none' }}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -43,9 +41,8 @@ export function Icon({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      style={style}
     >
       <path d={paths[name]} />
-    </svg>
+    </SvgIcon>
   )
 }
