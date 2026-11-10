@@ -3,9 +3,12 @@ api/api/dbkey.json
 /api/api/obj
 /api/api/bin
 /api/database/obj
-/build_inspector
+/api/node_modules
+api/tsconfig.build.tsbuildinfo
 script/hardware_data_clean.json
+script/hardware_data.json
 node_modules
+dist
 .env
 /.vscode
 *.aider.input.history
