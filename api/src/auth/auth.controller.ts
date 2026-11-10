@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard.js';
 import { JwtUserPayload, UserLoginReqDto, UserLoginResDto } from '../common/dto/user.dto.js';
@@ -26,7 +26,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  logout(@Req() req: { user: JwtUserPayload }): Promise<void> {
+  async logout(@Req() req: { user: JwtUserPayload }): Promise<void> {
+    if (!req.user) throw new UnauthorizedException();
     return this.authService.signOut(req.user.sub);
   }
 }

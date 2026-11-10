@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../auth/auth.service.js';
 import { AuthController } from '../auth/auth.controller.js';
+import { JwtAuthGuard } from '../guard/jwt-auth.guard.js';
 import { JwtUserPayload, UserLoginReqDto, UserLoginResDto } from '../common/dto/user.dto.js';
 import { UnauthorizedException } from '@nestjs/common';
 import { RefreshTokenDto } from '../common/dto/user.dto.js';
@@ -22,7 +23,11 @@ describe('AuthController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      // The guard is covered separately; here we only test the controller.
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     authController = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
