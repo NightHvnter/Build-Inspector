@@ -58,9 +58,9 @@ export function GameDetails({
             <Table size="small" aria-label="Requisiti del gioco">
               <TableBody>
                 {[
-                  ['CPU', game.reqCpu],
-                  ['GPU', game.reqGpu],
-                  ['RAM', game.reqRam + ' GB']
+                  ['CPU', game.reqCpu || 'Non disponibile'],
+                  ['GPU', game.reqGpu || 'Non disponibile'],
+                  ['RAM', game.reqRam ? game.reqRam + ' GB' : 'Non disponibile']
                 ].map(([label, value]) => (
                   <TableRow key={label}>
                     <TableCell component="th" scope="row">

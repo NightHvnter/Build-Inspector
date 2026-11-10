@@ -49,6 +49,11 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
             {error}
           </Alert>
         )}
+        {catalog.steamError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {catalog.steamError}
+          </Alert>
+        )}
         <GameFilters
           search={catalog.search}
           genre={catalog.genre}
@@ -59,6 +64,7 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center', my: 2 }}>
           <Typography variant="caption" color="text.secondary" role="status">
             {catalog.games.length} giochi disponibili
+            {catalog.steamLoading && ' · Cerco su Steam…'}
           </Typography>
           {catalog.hasFilters && (
             <Button size="small" onClick={catalog.resetFilters}>
@@ -66,7 +72,7 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
             </Button>
           )}
         </Stack>
-        {catalog.games.length ? (
+        {catalog.games.length || catalog.steamLoading ? (
           <Box
             sx={{
               display: 'grid',
