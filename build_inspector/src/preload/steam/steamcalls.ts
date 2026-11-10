@@ -3,7 +3,7 @@ import { IGameDetails, IRequirements } from "./steam";
 // steam game list(default)
 // steam game list(search by name)
 
-export async function getSteamGameDetails (steam_appid : number | string) 
+export async function getSteamGameDetails (_steam_appid : number | string) 
 {
   //const req = await fetch(`API_PLACEHOLDER/games/${steam_appid}...?
   const req = await fetch("API_PLACEHOLDER", { method: "GET" });
@@ -21,7 +21,7 @@ export async function getSteamGameDetails (steam_appid : number | string)
 }
 
 
-export async function getSteamGameRequirements(steam_appid : number | string) 
+export async function getSteamGameRequirements(_steam_appid : number | string) 
 {
   //const req = await fetch(`API_PLACEHOLDER/games/${steam_appid}...?
   const req = await fetch("API_PLACEHOLDER", { method: "GET" });

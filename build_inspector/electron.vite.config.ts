@@ -2,7 +2,7 @@ import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 
-const shared = resolve('src/shared')
+const shared = resolve('src/preload/shared')
 
 export default defineConfig({
   main: { plugins: [externalizeDepsPlugin()], resolve: { alias: { '@shared': shared } } },

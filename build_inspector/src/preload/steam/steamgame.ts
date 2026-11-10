@@ -3,7 +3,7 @@ export interface ISteamSearchItem {
   name: string;
 }
  
-interface ISteamSearchResponse {
+export interface ISteamSearchResponse {
   total: number;
   items: ISteamSearchItem[];
 }
@@ -18,7 +18,7 @@ export interface IGameDetails {
   pcreq: IRequirements | []; 
 }
  
-interface ISteamDetailsResponse {
+export interface ISteamDetailsResponse {
   [appId: string]: {
     success: boolean;
     data?: IGameDetails;

@@ -29,7 +29,8 @@
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.4.0",
     "electron-updater": "^6.3.9",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "systeminformation": "^5.33.19"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
