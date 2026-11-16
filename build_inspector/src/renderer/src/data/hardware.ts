@@ -118,3 +118,36 @@ export function getBottleneck(
     balanced: true
   }
 }
+
+// Brand and family words Steam often leaves out ("Core i7-6700" for "Intel Core i7-6700").
+const OPTIONAL_WORDS = new Set(['intel', 'amd', 'nvidia', 'ati', 'geforce', 'radeon', 'core'])
+
+// The API part one alternative names, e.g. "GeForce GTX 1060 6GB". Every model number in
+// the part's name must appear in the text, and every other word too unless it's a brand.
+function matchAlternative(text: string, parts: HardwarePart[]): HardwarePart | null {
+  const words = new Set(nameTokens(text))
+  let best: { part: HardwarePart; matched: number } | null = null
+  for (const part of parts) {
+    const tokens = nameTokens(part.name)
+    const models = tokens.filter((token) => /\d/.test(token))
+    if (!models.length || !models.every((token) => words.has(token))) continue
+    const optional = (token: string): boolean =>
+      OPTIONAL_WORDS.has(token) || /^[a-z]+-core$/.test(token)
+    if (!tokens.every((token) => words.has(token) || optional(token))) continue
+    const matched = tokens.filter((token) => words.has(token)).length
+    if (matched < 2) continue
+    if (!best || matched > best.matched || (matched === best.matched && part.mark < best.part.mark))
+      best = { part, matched }
+  }
+  return best?.part ?? null
+}
+
+// The parts a requirement line lists as alternatives ("Core i7-6700 or Ryzen 5 1600").
+export function matchRequirement(text: string, parts: HardwarePart[]): HardwarePart[] {
+  const found = new Map<string, HardwarePart>()
+  for (const alternative of text.split(/\s+(?:or|o|oppure)\s+|[/,;|]|\s+-\s+/i)) {
+    const part = alternative.trim() && matchAlternative(alternative, parts)
+    if (part) found.set(part.name, part)
+  }
+  return [...found.values()]
+}

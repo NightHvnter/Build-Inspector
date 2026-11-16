@@ -1,10 +1,12 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ScannedPc } from '@shared/types/scan'
 import { GameDetails } from '../components/catalog/GameDetails'
 import { steamGame } from '../hooks/useSteamSearch'
 import { resetPcScanCache } from '../hooks/usePcScan'
+import { AuthContext, type AuthContextValue } from '../contexts/AuthContext'
+import type { User } from '../types/auth'
 
 const requirements = vi.fn()
 const scan = vi.fn()
@@ -25,23 +27,50 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  cleanup()
   delete window.api
   requirements.mockReset()
   scan.mockReset()
 })
 
-function open(): void {
+function open(user: User | null = null): void {
   render(
-    <MemoryRouter>
-      <GameDetails
-        game={steamGame(1091500, 'Cyberpunk 2077')}
-        favorite={false}
-        onClose={() => {}}
-        onFavorite={() => {}}
-      />
-    </MemoryRouter>
+    <AuthContext.Provider value={{ ...authDefaults(), user }}>
+      <MemoryRouter>
+        <GameDetails
+          game={steamGame(1091500, 'Cyberpunk 2077')}
+          favorite={false}
+          onClose={() => {}}
+          onFavorite={() => {}}
+        />
+      </MemoryRouter>
+    </AuthContext.Provider>
   )
 }
+
+function authDefaults(): AuthContextValue {
+  return {
+    user: null,
+    initializing: false,
+    configured: true,
+    sessionError: '',
+    signIn: vi.fn(),
+    signUp: vi.fn(),
+    signOut: vi.fn()
+  }
+}
+
+it('asks guests to log in before comparing with their PC', () => {
+  requirements.mockReturnValue(new Promise(() => {}))
+  scan.mockReturnValue(new Promise(() => {}))
+  open()
+  const guest = screen.getByRole('link', { name: 'Accedi per confrontare' })
+  expect(guest.getAttribute('href')).toBe('/login?next=%2Fconfronto%2F1091500')
+  cleanup()
+  open({ id: '42', name: 'Test', email: 'test@example.com' })
+  const member = screen.getByRole('link', { name: 'Confronta con il mio PC' })
+  expect(member.getAttribute('href')).toBe('/confronto/1091500')
+})
 
 it('shows the minimum requirements from Steam and checks RAM against the scan', async () => {
   requirements.mockResolvedValue({

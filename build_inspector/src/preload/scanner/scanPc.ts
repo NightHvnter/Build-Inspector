@@ -12,15 +12,19 @@ async function safe<T>(promise: Promise<T>, fallback: T): Promise<T> {
 }
 
 export async function scanPc(): Promise<ScannedPc> {
-  const [cpu, gfx, mem, layout, disks, board, os] = await Promise.all([
+  const [cpu, gfx, mem, layout, disks, board, os, volumes] = await Promise.all([
     safe(si.cpu(), null),
     safe(si.graphics(), null),
     safe(si.mem(), null),
     safe(si.memLayout(), []),
     safe(si.diskLayout(), []),
     safe(si.baseboard(), null),
-    safe(si.osInfo(), null)
+    safe(si.osInfo(), null),
+    safe(si.fsSize(), [])
   ])
+  // One entry per mounted volume (C:, D:, …); count each mount once.
+  const mounts = new Map(volumes.map((v) => [v.mount || v.fs, v.available ?? 0]))
+  const freeBytes = [...mounts.values()].reduce((sum, bytes) => sum + (bytes > 0 ? bytes : 0), 0)
 
   return {
     scannedAt: new Date().toISOString(),
@@ -35,7 +39,7 @@ export async function scanPc(): Promise<ScannedPc> {
     gpus: (gfx?.controllers ?? []).map((g) => {
       const c = g as { name?: string; model?: string; vendor?: string; vram?: number | null }
       return {
-        name: (c.name || c.model || '').trim(), 
+        name: (c.name || c.model || '').trim(),
         model: (c.model || '').trim(),
         vendor: c.vendor ?? '',
         vramMb: c.vram ?? 0
@@ -55,6 +59,7 @@ export async function scanPc(): Promise<ScannedPc> {
       type: d.type ?? '',
       sizeGb: bytesToGb(d.size)
     })),
+    freeStorageGb: bytesToGb(freeBytes),
     motherboard: { manufacturer: board?.manufacturer ?? '', model: board?.model ?? '' }
   }
 }

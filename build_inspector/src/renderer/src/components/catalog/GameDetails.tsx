@@ -23,6 +23,8 @@ import type { RequirementKind, RequirementRow } from '@shared/types/steam'
 import type { Game } from '../../games'
 import { steamAppId, useGameRequirements } from '../../hooks/useGameRequirements'
 import { usePcScan } from '../../hooks/usePcScan'
+import { useAuth } from '../../hooks/useAuth'
+import { authLink } from '../../utils/authNavigation'
 import { Icon } from '../Icon'
 import { GameCover } from './GameCover'
 
@@ -149,6 +151,25 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
   )
 }
 
+// The comparison page needs an account: guests are sent to log in, then on to the page.
+function CompareButton({ game, onClose }: { game: Game; onClose: () => void }): JSX.Element | null {
+  const { user } = useAuth()
+  const appId = steamAppId(game)
+  if (appId === null) return null
+  const page = '/confronto/' + appId
+  return (
+    <Button
+      component={Link}
+      to={user ? page : authLink('/login', page)}
+      onClick={onClose}
+      variant="contained"
+      startIcon={user ? undefined : <Icon name="lock" size={16} />}
+    >
+      {user ? 'Confronta con il mio PC' : 'Accedi per confrontare'}
+    </Button>
+  )
+}
+
 export function GameDetails({
   game,
   favorite,
@@ -188,9 +209,10 @@ export function GameDetails({
             <Button color="inherit" onClick={onFavorite}>
               {favorite ? 'Rimuovi dai preferiti' : 'Salva nei preferiti'}
             </Button>
-            <Button component={Link} to="/configurazione" onClick={onClose} variant="contained">
+            <Button component={Link} to="/configurazione" onClick={onClose} variant="outlined">
               Configura il mio PC
             </Button>
+            <CompareButton game={game} onClose={onClose} />
           </DialogActions>
         </>
       )}
