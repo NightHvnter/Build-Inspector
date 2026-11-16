@@ -17,3 +17,5 @@ backend/*/obj/*
 /node_modules
 node_modules/.bin/loose-envify.cmd
 /api/dist
+/build_inspector
+hardware*.json
