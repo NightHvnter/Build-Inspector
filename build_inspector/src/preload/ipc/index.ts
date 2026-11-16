@@ -5,6 +5,7 @@ import { scanPc } from '../scanner/scanPc'
 import { saveMyPc, loadMyPc } from '../storage/myPc'
 import { addToHistory, listHistory, exportScan, importScan } from '../storage/history'
 import { getGameMinimumRequirements, searchSteamGames } from '../steam/steamcalls'
+import { getHardwareCatalog } from '../hardware/hardwareCalls'
 
 export function registerIpc(): void {
   ipcMain.handle(IPC.scan, () => scanPc())
@@ -25,4 +26,5 @@ export function registerIpc(): void {
       ? getGameMinimumRequirements(appId)
       : { ok: false, message: 'Gioco non valido.' }
   )
+  ipcMain.handle(IPC.hardwareCatalog, () => getHardwareCatalog())
 }

@@ -1,7 +1,9 @@
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
+  createFilterOptions,
   Divider,
   MenuItem,
   Paper,
@@ -10,69 +12,124 @@ import {
   Typography
 } from '@mui/material'
 import type { JSX } from 'react'
-import { CPUS, GPUS, RAM_OPTIONS } from '../../data/hardware'
 import type { Build } from '../../hooks/useBuild'
 import type { Result } from '../../services/result'
+import { Icon } from '../Icon'
+
+// The lists hold thousands of parts: show the first 50 matches of what the user types.
+const filterParts = createFilterOptions<string>({ limit: 50 })
 
 interface BuildFormProps {
   build: Build
+  cpus: string[]
+  gpus: string[]
+  ramOptions: number[]
+  loading: boolean
   dirty: boolean
   feedback: Result<Build> | null
+  scanning: boolean
+  canDetect: boolean
   onChange: (value: Partial<Build>) => void
+  onDetect: () => void
   onSave: () => void
+}
+
+function PartField({
+  label,
+  value,
+  options,
+  loading,
+  onChange
+}: {
+  label: string
+  value: string
+  options: string[]
+  loading: boolean
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <Autocomplete
+      options={options}
+      value={value && options.includes(value) ? value : null}
+      onChange={(_event, next) => onChange(next ?? '')}
+      filterOptions={filterParts}
+      loading={loading}
+      disabled={!options.length}
+      noOptionsText="Nessun componente trovato"
+      loadingText="Carico l’elenco…"
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label={label}
+          placeholder={loading ? 'Carico l’elenco…' : 'Cerca per nome'}
+        />
+      )}
+    />
+  )
 }
 
 export function BuildForm({
   build,
+  cpus,
+  gpus,
+  ramOptions,
+  loading,
   dirty,
   feedback,
+  scanning,
+  canDetect,
   onChange,
+  onDetect,
   onSave
 }: BuildFormProps): JSX.Element {
   return (
     <Paper component="section" variant="outlined" sx={{ p: 3 }} aria-labelledby="build-title">
-      <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', mb: 3 }}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+      >
         <Typography id="build-title" component="h2" variant="h6">
           La tua configurazione
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {dirty ? 'Modifiche da salvare' : 'Nessuna modifica in sospeso'}
-        </Typography>
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary">
+            {dirty ? 'Modifiche da salvare' : 'Nessuna modifica in sospeso'}
+          </Typography>
+          <Button
+            size="small"
+            onClick={onDetect}
+            disabled={!canDetect}
+            startIcon={<Icon name="chip" size={16} />}
+          >
+            {scanning ? 'Scansione…' : 'Rileva dal mio PC'}
+          </Button>
+        </Stack>
       </Stack>
       <Box
         sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 0.65fr' }, gap: 2 }}
       >
-        <TextField
-          select
+        <PartField
           label="CPU"
           value={build.cpuName}
-          onChange={(event) => onChange({ cpuName: event.target.value })}
-        >
-          {CPUS.map((cpu) => (
-            <MenuItem key={cpu.name} value={cpu.name}>
-              {cpu.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
+          options={cpus}
+          loading={loading}
+          onChange={(cpuName) => onChange({ cpuName })}
+        />
+        <PartField
           label="GPU"
           value={build.gpuName}
-          onChange={(event) => onChange({ gpuName: event.target.value })}
-        >
-          {GPUS.map((gpu) => (
-            <MenuItem key={gpu.name} value={gpu.name}>
-              {gpu.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          options={gpus}
+          loading={loading}
+          onChange={(gpuName) => onChange({ gpuName })}
+        />
         <TextField
           select
           label="RAM"
           value={build.ram}
           onChange={(event) => onChange({ ram: Number(event.target.value) })}
         >
-          {RAM_OPTIONS.map((ram) => (
+          {ramOptions.map((ram) => (
             <MenuItem key={ram} value={ram}>
               {ram} GB
             </MenuItem>

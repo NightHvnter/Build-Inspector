@@ -1,51 +1,100 @@
-import type { Game } from '../games'
-interface Component {
-  name: string
-  score: number
-}
-
-export const CPUS: Component[] = [
-  { name: 'Intel Core i3-12100F', score: 45 },
-  { name: 'AMD Ryzen 5 3600', score: 48 },
-  { name: 'Intel Core i5-12400F', score: 58 },
-  { name: 'AMD Ryzen 5 5600', score: 60 },
-  { name: 'Intel Core i5-13600K', score: 78 },
-  { name: 'AMD Ryzen 7 5800X3D', score: 82 },
-  { name: 'AMD Ryzen 7 7800X3D', score: 95 },
-  { name: 'Intel Core i9-14900K', score: 100 }
-]
-
-export const GPUS: Component[] = [
-  { name: 'NVIDIA GTX 1060', score: 28 },
-  { name: 'NVIDIA GTX 1660 Super', score: 38 },
-  { name: 'NVIDIA RTX 2060', score: 45 },
-  { name: 'NVIDIA RTX 3060', score: 55 },
-  { name: 'NVIDIA RTX 3070', score: 68 },
-  { name: 'AMD RX 6800 XT', score: 78 },
-  { name: 'NVIDIA RTX 4070', score: 82 },
-  { name: 'NVIDIA RTX 4080', score: 92 },
-  { name: 'NVIDIA RTX 4090', score: 100 }
-]
+import type { HardwarePart } from '@shared/types/hardware'
+import type { ScannedPc } from '@shared/types/scan'
 
 export const RAM_OPTIONS = [8, 16, 32, 64]
 
-// Punteggio di riferimento: con un componente da 60 si ottiene il baseFps del gioco
-const REFERENCE_SCORE = 60
-const RAM_PENALTY = 0.6
-
-export function estimateFps(game: Game, cpuScore: number, gpuScore: number, ram: number): number {
-  const effective = Math.min(cpuScore, gpuScore)
-  let fps = (game.baseFps * effective) / REFERENCE_SCORE
-  if (ram < game.reqRam) {
-    fps *= RAM_PENALTY
-  }
-  return Math.round(fps)
+// The RAM sizes to offer: the usual ones plus any other value in use (e.g. a scanned 24 GB).
+export function ramOptions(...inUse: number[]): number[] {
+  const extra = inUse.filter((gb) => Number.isSafeInteger(gb) && gb > 0 && gb <= 4096)
+  return [...new Set([...RAM_OPTIONS, ...extra])].sort((a, b) => a - b)
 }
 
-export function getStatus(fps: number): { label: string; color: 'success' | 'warning' | 'error' } {
-  if (fps >= 60) return { label: 'Fluido', color: 'success' }
-  if (fps >= 30) return { label: 'Giocabile', color: 'warning' }
-  return { label: 'Insufficiente', color: 'error' }
+// The CPU/GPU balance check (getBottleneck) uses 0-100 scores, where the i9-14900K and the
+// RTX 4090 score 100.
+// The API gives PassMark marks instead, so they are scaled against those two parts.
+// CPU marks count every core while games use only a few, so CPU scores grow with the
+// square root of the mark, and GPU scores with mark^0.8: that keeps mid-range parts near
+// the catalog's old hand-picked values (Ryzen 5 5600 ≈ 61, RTX 3060 ≈ 52).
+const CPU_REFERENCE = { name: 'Intel Core i9-14900K', mark: 58149 }
+const GPU_REFERENCE = { name: 'GeForce RTX 4090', mark: 38016 }
+const MAX_SCORE = 150
+
+function referenceMark(parts: HardwarePart[], fallback: { name: string; mark: number }): number {
+  return parts.find((part) => part.name === fallback.name)?.mark ?? fallback.mark
+}
+
+function clampScore(score: number): number {
+  return Math.max(1, Math.min(MAX_SCORE, Math.round(score)))
+}
+
+export function cpuScore(mark: number, cpus: HardwarePart[] = []): number {
+  return clampScore(100 * Math.sqrt(mark / referenceMark(cpus, CPU_REFERENCE)))
+}
+
+export function gpuScore(mark: number, gpus: HardwarePart[] = []): number {
+  return clampScore(100 * (mark / referenceMark(gpus, GPU_REFERENCE)) ** 0.8)
+}
+
+// "Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz" → ["intel", "core", "i5-8400", "cpu"]
+function nameTokens(name: string): string[] {
+  return (
+    name
+      .toLowerCase()
+      .replace(/\((r|tm|c)\)|[®™©]/g, ' ')
+      .replace(/@\s*[\d.]+\s*[gm]hz/g, ' ')
+      // "Core i5 750" and "Core i5-750" are the same CPU.
+      .replace(/\b(i[3579])[\s-]+(\d{3,5}[a-z]*)\b/g, '$1-$2')
+      .split(/[\s,/]+/)
+      .filter(Boolean)
+  )
+}
+
+// The API part whose name the scanned name contains, word for word ("NVIDIA GeForce
+// RTX 3060" → "GeForce RTX 3060", but not "GeForce RTX 3060 Ti"). The longest such name
+// wins, so "RTX 3060 Laptop GPU" beats "RTX 3060". Only names with a model number count.
+export function matchPart(scannedName: string, parts: HardwarePart[]): HardwarePart | null {
+  const scanned = new Set(nameTokens(scannedName))
+  let best: { part: HardwarePart; size: number } | null = null
+  for (const part of parts) {
+    const tokens = nameTokens(part.name)
+    if (tokens.length < 2 || !tokens.some((token) => /\d/.test(token))) continue
+    if (!tokens.every((token) => scanned.has(token))) continue
+    if (
+      !best ||
+      tokens.length > best.size ||
+      (tokens.length === best.size && part.mark > best.part.mark)
+    )
+      best = { part, size: tokens.length }
+  }
+  return best?.part ?? null
+}
+
+export interface DetectedBuild {
+  cpuName: string // empty when the scanned CPU is not in the list
+  gpuName: string
+  ram: number
+  scannedCpu: string
+  scannedGpus: string[]
+}
+
+// Turns a PC scan into form values: the matching API names, and the fastest GPU
+// when the PC has more than one (e.g. integrated graphics and a graphics card).
+export function detectBuild(
+  pc: ScannedPc,
+  catalog: { cpus: HardwarePart[]; gpus: HardwarePart[] }
+): DetectedBuild {
+  const cpu = pc.cpu.name ? matchPart(pc.cpu.name, catalog.cpus) : null
+  const gpus = pc.gpus
+    .map((gpu) => matchPart(gpu.name, catalog.gpus) ?? matchPart(gpu.model, catalog.gpus))
+    .filter((gpu): gpu is HardwarePart => !!gpu)
+    .sort((a, b) => b.mark - a.mark)
+  return {
+    cpuName: cpu?.name ?? '',
+    gpuName: gpus[0]?.name ?? '',
+    ram: pc.ram.totalGb,
+    scannedCpu: pc.cpu.name,
+    scannedGpus: pc.gpus.map((gpu) => gpu.name).filter(Boolean)
+  }
 }
 
 export function getBottleneck(

@@ -5,6 +5,7 @@ import { accountChannels, type AccountApi } from '../shared/auth'
 import { IPC } from '@shared/types/ipc'
 import type { SteamApi } from '@shared/types/steam'
 import type { ScannerApi } from '@shared/types/scan'
+import type { HardwareApi } from '@shared/types/hardware'
 
 const account: AccountApi = {
   getSession: () => ipcRenderer.invoke(accountChannels.getSession),
@@ -19,7 +20,10 @@ const steam: SteamApi = {
 const scanner: ScannerApi = {
   scan: () => ipcRenderer.invoke(IPC.scan)
 }
-const api = { account, steam, scanner }
+const hardware: HardwareApi = {
+  catalog: () => ipcRenderer.invoke(IPC.hardwareCatalog)
+}
+const api = { account, steam, scanner, hardware }
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
