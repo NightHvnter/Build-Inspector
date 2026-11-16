@@ -1,11 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity('Cpu')
 export class CpuEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @CreateDateColumn()
   created_at: Date;
 
   @Column({ length: 255 })
@@ -14,9 +14,9 @@ export class CpuEntity {
   @Column()
   Mark: number;
 
-  @Column()
-  Cores: number;
+  @Column({ type: 'int', nullable: true })
+  Cores: number | null;
 
-  @Column({ length: 255 })
-  Socket: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  Socket: string | null;
 }
