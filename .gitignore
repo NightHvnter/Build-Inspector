@@ -13,3 +13,7 @@ dist
 /.vscode
 *.aider.input.history
 *.aider-desk
+backend/*/obj/*
+/node_modules
+node_modules/.bin/loose-envify.cmd
+/api/dist

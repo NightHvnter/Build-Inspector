@@ -3,14 +3,24 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@emotion/styled": "^11.14.1",
+    "@fontsource/noto-sans": "^5.3.0",
+    "@mui/material": "^9.4.0",
     "@nestjs/class-transformer": "^0.4.0",
     "class-transformer": "^0.5.1",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@electron-toolkit/tsconfig": "^2.0.0",
     "@types/node": "^26.6.4",
+    "@types/react-dom": "^19.3.0",
     "electron-vite": "^5.0.0",
+    "tsx": "^4.23.15",
     "vitest": "^5.0.3"
+  },
+  "allowScripts": {
+    "tsx@4.23.15": true
   }
 }
