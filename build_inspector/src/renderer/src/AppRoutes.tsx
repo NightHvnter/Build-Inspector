@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { AuthPage } from './Login'
 import { Library } from './library'
 import { CompareGame } from './compare'
+import { HistoryPage } from './history'
 import { PostRegistrazione } from './post-registrazione'
 import { useAuth } from './hooks/useAuth'
 
@@ -35,6 +36,7 @@ export function AppRoutes({
             element={user ? <PostRegistrazione key={user.id} userId={user.id} /> : null}
           />
           <Route path="/confronto/:appId" element={<CompareGame />} />
+          <Route path="/cronologia" element={<HistoryPage key={user?.id} />} />
         </Route>
         <Route
           path="*"

@@ -2,6 +2,7 @@ import type { HardwareCatalog, HardwarePart } from '@shared/types/hardware'
 import type { ScannedPc } from '@shared/types/scan'
 import type { GameRequirements, RequirementKind } from '@shared/types/steam'
 import { sizeInGb } from '@shared/units'
+import type { HistoryRecord } from '../../../shared/history'
 import { detectBuild, matchRequirement } from './hardware'
 
 // ok: the PC meets it; low: it doesn't; check: it can't be decided from the data;
@@ -132,4 +133,25 @@ export function summarize(rows: ComparisonRow[]): Record<Verdict, number> {
   const totals: Record<Verdict, number> = { ok: 0, low: 0, check: 0, info: 0 }
   for (const row of rows) totals[row.verdict]++
   return totals
+}
+
+// What a finished comparison saves to the history (window.api.history.record).
+export function historyRecord(
+  requirements: GameRequirements,
+  pc: ScannedPc,
+  catalog: HardwareCatalog | null,
+  rows: ComparisonRow[]
+): HistoryRecord {
+  const detected = catalog ? detectBuild(pc, catalog) : null
+  const totals = summarize(rows)
+  return {
+    appId: requirements.appId,
+    gameName: (requirements.name || 'Gioco ' + requirements.appId).slice(0, 255),
+    cpuName: detected?.cpuName || null,
+    gpuName: detected?.gpuName || null,
+    ramGb: pc.ram.totalGb || null,
+    met: totals.ok,
+    failed: totals.low,
+    toCheck: totals.check
+  }
 }

@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 import { accountChannels, type AccountApi } from '../shared/auth'
+import { historyChannels, type HistoryApi } from '../shared/history'
 import { IPC } from '@shared/types/ipc'
 import type { SteamApi } from '@shared/types/steam'
 import type { ScannerApi } from '@shared/types/scan'
@@ -23,7 +24,13 @@ const scanner: ScannerApi = {
 const hardware: HardwareApi = {
   catalog: () => ipcRenderer.invoke(IPC.hardwareCatalog)
 }
-const api = { account, steam, scanner, hardware }
+const history: HistoryApi = {
+  list: () => ipcRenderer.invoke(historyChannels.list),
+  record: (entry) => ipcRenderer.invoke(historyChannels.record, entry),
+  remove: (id) => ipcRenderer.invoke(historyChannels.remove, id),
+  clear: () => ipcRenderer.invoke(historyChannels.clear)
+}
+const api = { account, steam, scanner, hardware, history }
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

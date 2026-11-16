@@ -15,9 +15,9 @@ import {
   TableRow,
   Typography
 } from '@mui/material'
-import { useMemo, type JSX } from 'react'
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { compareWithPc, summarize, type Verdict } from './data/compare'
+import { compareWithPc, historyRecord, summarize, type Verdict } from './data/compare'
 import { useGameRequirements } from './hooks/useGameRequirements'
 import { useHardwareCatalog } from './hooks/useHardwareCatalog'
 import { usePcScan } from './hooks/usePcScan'
@@ -50,6 +50,24 @@ export function CompareGame(): JSX.Element {
   )
   const totals = summarize(rows)
   const loading = steam.loading || scan.scanning || hardware.loading
+
+  // Save each finished comparison once (a new scan counts as a new one). The API merges
+  // repeats of the same game within a few minutes, so a reload doesn't add an entry.
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const recorded = useRef<string | null>(null)
+  const pc = scan.pc
+  const catalog = hardware.catalog
+  useEffect(() => {
+    const history = window.api?.history
+    if (!history || loading || !requirements || !pc || !rows.length) return
+    const key = requirements.appId + '@' + pc.scannedAt
+    if (recorded.current === key) return
+    recorded.current = key
+    history
+      .record(historyRecord(requirements, pc, catalog, rows))
+      .then((reply) => setHistoryError(reply.ok ? null : reply.message))
+      .catch(() => setHistoryError('Cronologia non disponibile.'))
+  }, [loading, requirements, pc, catalog, rows])
 
   if (appId === null)
     return (
@@ -207,6 +225,11 @@ export function CompareGame(): JSX.Element {
         Processore e scheda video sono confrontati con i punteggi PassMark del database: è una
         stima, non una garanzia di prestazioni.
       </Typography>
+      {historyError && (
+        <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
+          Confronto non salvato nella cronologia: {historyError}
+        </Typography>
+      )}
     </Box>
   )
 }

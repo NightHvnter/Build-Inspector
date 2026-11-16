@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ScannedPc } from '@shared/types/scan'
@@ -9,6 +9,7 @@ import { resetPcScanCache } from '../hooks/usePcScan'
 const requirements = vi.fn()
 const scan = vi.fn()
 const catalog = vi.fn()
+const record = vi.fn()
 
 const PC = {
   os: { platform: 'Windows', distro: 'Microsoft Windows 11 Pro', release: '10.0.26200' },
@@ -25,7 +26,8 @@ beforeEach(() => {
     account: {} as never,
     steam: { search: vi.fn(), requirements },
     scanner: { scan },
-    hardware: { catalog }
+    hardware: { catalog },
+    history: { list: vi.fn(), record, remove: vi.fn(), clear: vi.fn() }
   }
   requirements.mockResolvedValue({
     ok: true,
@@ -41,6 +43,7 @@ beforeEach(() => {
     }
   })
   scan.mockResolvedValue(PC)
+  record.mockResolvedValue({ ok: true, data: {} })
   catalog.mockResolvedValue({
     ok: true,
     data: {
@@ -60,6 +63,7 @@ afterEach(() => {
   requirements.mockReset()
   scan.mockReset()
   catalog.mockReset()
+  record.mockReset()
 })
 
 function open(path: string): void {
@@ -90,4 +94,26 @@ it('rejects an invalid game id without calling Steam', () => {
   screen.getByText('Gioco non valido.')
   expect(requirements).not.toHaveBeenCalled()
   expect(scan).not.toHaveBeenCalled()
+})
+
+it('saves the finished comparison to the history once', async () => {
+  open('/confronto/1091500')
+  await screen.findByText('Il tuo PC raggiunge i requisiti minimi')
+  await waitFor(() => expect(record).toHaveBeenCalledTimes(1))
+  expect(record).toHaveBeenCalledWith({
+    appId: 1091500,
+    gameName: 'Cyberpunk 2077',
+    cpuName: 'Intel Core i7-12700K',
+    gpuName: 'Radeon RX 7900 XT',
+    ramGb: 32,
+    met: 2,
+    failed: 0,
+    toCheck: 0
+  })
+})
+
+it('says so when the comparison could not be saved', async () => {
+  record.mockResolvedValue({ ok: false, message: 'La sessione è scaduta. Accedi di nuovo.' })
+  open('/confronto/1091500')
+  await screen.findByText(/Confronto non salvato nella cronologia: La sessione è scaduta/)
 })

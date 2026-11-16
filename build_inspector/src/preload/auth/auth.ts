@@ -4,7 +4,12 @@
 import type { AccountApi, Result, User } from '../../shared/auth'
 import { API_URL } from '../apiUrl'
 
-type Reply = { ok: true; data: unknown } | { ok: false; status: number; message: string }
+export type Reply = { ok: true; data: unknown } | { ok: false; status: number; message: string }
+
+// The account API plus requests made as the signed-in user (used by main/accountIpc.ts).
+export interface AccountClient extends AccountApi {
+  authorized(method: 'GET' | 'POST' | 'DELETE', path: string, body?: object): Promise<Reply>
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -12,7 +17,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 const invalidReply = { ok: false, message: 'Risposta del servizio account non valida.' } as const
 
-export function createAccountClient(address: string = API_URL): AccountApi {
+export function createAccountClient(address: string = API_URL): AccountClient {
   // L'indirizzo è configurato all'avvio, mai da un campo o da un link nella pagina.
   const base = URL.canParse(address) ? new URL(address) : null
   const secure =
@@ -21,12 +26,17 @@ export function createAccountClient(address: string = API_URL): AccountApi {
       (base.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname)))
   let tokens: { access: string; refresh: string } | null = null
 
-  async function post(path: string, body?: object, bearer?: string): Promise<Reply> {
+  async function request(
+    method: 'GET' | 'POST' | 'DELETE',
+    path: string,
+    body?: object,
+    bearer?: string
+  ): Promise<Reply> {
     if (!base || !secure || base.username || base.password || base.search || base.hash)
       return { ok: false, status: 0, message: 'Indirizzo del servizio account non valido.' }
     try {
       const response = await fetch(base.href.replace(/\/$/, '') + path, {
-        method: 'POST',
+        method,
         redirect: 'error',
         signal: AbortSignal.timeout(10000),
         headers: {
@@ -42,6 +52,7 @@ export function createAccountClient(address: string = API_URL): AccountApi {
             path === '/auth/login'
               ? 'Email o password errate.'
               : 'La sessione è scaduta. Accedi di nuovo.',
+          404: 'Elemento non trovato.',
           409: 'Nome utente o email già in uso.'
         }
         return {
@@ -66,6 +77,9 @@ export function createAccountClient(address: string = API_URL): AccountApi {
       }
     }
   }
+
+  const post = (path: string, body?: object, bearer?: string): Promise<Reply> =>
+    request('POST', path, body, bearer)
 
   function acceptSession(data: unknown): Result<User> {
     if (
@@ -105,7 +119,29 @@ export function createAccountClient(address: string = API_URL): AccountApi {
     return refreshing
   }
 
+  // A request as the signed-in user. An expired access token is renewed once and the
+  // request repeated; the tokens themselves never leave this process.
+  async function authorized(
+    method: 'GET' | 'POST' | 'DELETE',
+    path: string,
+    body?: object
+  ): Promise<Reply> {
+    const signedOut = {
+      ok: false,
+      status: 401,
+      message: 'Accedi per usare la cronologia.'
+    } as const
+    if (!tokens) return signedOut
+    const reply = await request(method, path, body, tokens.access)
+    if (reply.ok || reply.status !== 401) return reply
+    const renewed = await getSession()
+    if (!renewed.ok) return { ok: false, status: 0, message: renewed.message }
+    if (!tokens || !renewed.data) return signedOut
+    return request(method, path, body, tokens.access)
+  }
+
   return {
+    authorized,
     getSession,
     async signIn({ email, password }) {
       const reply = await post('/auth/login', { Email: email, Password: password })
