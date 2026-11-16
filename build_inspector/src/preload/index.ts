@@ -4,6 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { accountChannels, type AccountApi } from '../shared/auth'
 import { IPC } from '@shared/types/ipc'
 import type { SteamApi } from '@shared/types/steam'
+import type { ScannerApi } from '@shared/types/scan'
 
 const account: AccountApi = {
   getSession: () => ipcRenderer.invoke(accountChannels.getSession),
@@ -12,9 +13,13 @@ const account: AccountApi = {
   signOut: () => ipcRenderer.invoke(accountChannels.signOut)
 }
 const steam: SteamApi = {
-  search: (term) => ipcRenderer.invoke(IPC.steamSearch, term)
+  search: (term) => ipcRenderer.invoke(IPC.steamSearch, term),
+  requirements: (appId) => ipcRenderer.invoke(IPC.steamRequirements, appId)
 }
-const api = { account, steam }
+const scanner: ScannerApi = {
+  scan: () => ipcRenderer.invoke(IPC.scan)
+}
+const api = { account, steam, scanner }
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

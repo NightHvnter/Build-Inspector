@@ -5,5 +5,6 @@ export const IPC = {
   listHistory: 'storage:listHistory',
   exportScan: 'storage:exportScan',
   importScan: 'storage:importScan',
-  steamSearch: 'steam:search'
+  steamSearch: 'steam:search',
+  steamRequirements: 'steam:requirements'
 } as const

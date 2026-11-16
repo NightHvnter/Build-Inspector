@@ -10,3 +10,7 @@ export interface ScannedPc {
   storage: { name: string; type: string; sizeGb: number }[]
   motherboard: { manufacturer: string; model: string }
 }
+// What the preload exposes to the renderer as window.api.scanner.
+export interface ScannerApi {
+  scan(): Promise<ScannedPc>
+}

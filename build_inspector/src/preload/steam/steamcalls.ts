@@ -2,7 +2,8 @@ import { IGameDetails, IRequirements } from "./steam";
 
 type SteamReply<T> = { ok: true; message: string; data: T } | { ok: false; message: string };
 import { apiUrl } from "../apiUrl";
-import type { SteamSearchReply, SteamSearchResult } from "../shared/types/steam";
+import type { GameRequirementsReply, SteamSearchReply, SteamSearchResult } from "../shared/types/steam";
+import { parseRequirements, sizeInGb } from "./requirements";
 
 // GET /steam/games/search?q= on the API, which proxies Steam's store search.
 export async function searchSteamGames(term: string): Promise<SteamSearchReply> {
@@ -64,5 +65,42 @@ export async function getSteamGameRequirements(steam_appid: number | string): Pr
     ok: true,
     message: "Requirements Found!",
     data
+  };
+}
+
+// A game's minimum PC requirements, as plain text rows for the game details dialog.
+export async function getGameMinimumRequirements(appId: number): Promise<GameRequirementsReply> {
+  let game: unknown;
+  try {
+    const req = await fetch(apiUrl(`/steam/games/${appId}`), {
+      method: "GET",
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!req.ok) return { ok: false, message: "Requisiti non disponibili su Steam. Riprova." };
+    // The API answers with an empty body when Steam doesn't know the app id.
+    const text = await req.text();
+    game = text ? JSON.parse(text) : null;
+  } catch {
+    return { ok: false, message: "Servizio Steam non raggiungibile. Controlla che l'API sia avviata." };
+  }
+  if (typeof game !== "object" || game === null)
+    return { ok: false, message: "Gioco non trovato su Steam." };
+  const { name, pc_requirements } = game as { name?: unknown; pc_requirements?: unknown };
+  const minimumHtml =
+    typeof pc_requirements === "object" && pc_requirements !== null && !Array.isArray(pc_requirements)
+      ? (pc_requirements as { minimum?: unknown }).minimum
+      : undefined;
+  const minimum = parseRequirements(minimumHtml);
+  const ram = minimum.find((row) => row.kind === "ram");
+  const storage = minimum.find((row) => row.kind === "storage");
+  return {
+    ok: true,
+    data: {
+      appId,
+      name: typeof name === "string" ? name : "",
+      minimum,
+      ramGb: ram ? sizeInGb(ram.value) : null,
+      storageGb: storage ? sizeInGb(storage.value) : null,
+    },
   };
 }
