@@ -9,15 +9,33 @@ def load_to_mariadb():
     # 2. Connessione a MariaDB (Docker)
     connection = pymysql.connect(
         host="localhost",
-        user="app_user",
-        password="app_password",  # Sostituisci con la tua password
-        database="mio_database",
+        user="root",
+        password="root_password_segreta",  # Sostituisci con la tua password
+        database="build_inspector",
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor
     )
 
     try:
         with connection.cursor() as cursor:
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS Cpu (
+                    Id INT auto_increment primary key,
+                    Name VARCHAR(100),
+                    Cores SMALLINT,
+                    Mark INT,
+                    Socket VARCHAR(20)
+                )      
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS Gpu (
+                    Id INT auto_increment primary key,
+                    Name VARCHAR(100),
+                    Mark INT
+                )      
+            """)
 
             cursor.execute("""
                 DELETE FROM Cpu
