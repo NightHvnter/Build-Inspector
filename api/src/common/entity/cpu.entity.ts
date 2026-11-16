@@ -1,12 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('Cpu')
 export class CpuEntity {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @CreateDateColumn()
-  created_at: Date;
 
   @Column({ length: 255 })
   Name: string;

@@ -24,7 +24,6 @@ export class BuildService {
         console.log(dbdata)
         const CpuData: Cpu = {
             id: dbdata?.id,
-            created_at: dbdata?.created_at,
             Name: dbdata?.Name,
             Mark: dbdata?.Mark,
             Cores: dbdata?.Cores,
@@ -40,9 +39,8 @@ export class BuildService {
         })
         const GpuData: Gpu = {
             id: dbdata?.id,
-            created_at: dbdata?.created_at,
             Name: dbdata?.Name,
-            Mark: dbdata?.Mark
+            Mark: dbdata?.Mark,
         }
 
         return GpuData;
