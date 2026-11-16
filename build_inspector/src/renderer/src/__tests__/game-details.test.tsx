@@ -43,7 +43,7 @@ function open(): void {
   )
 }
 
-it('shows the minimum requirements from Steam next to the scanned PC', async () => {
+it('shows the minimum requirements from Steam and checks RAM against the scan', async () => {
   requirements.mockResolvedValue({
     ok: true,
     data: {
@@ -65,10 +65,11 @@ it('shows the minimum requirements from Steam next to the scanned PC', async () 
   expect(scan).toHaveBeenCalledTimes(1)
   const cpu = within(table).getByRole('row', { name: /processore/i })
   expect(cpu.textContent).toContain('Core i7-6700 or Ryzen 5 1600')
-  await within(table).findByText(/AMD Ryzen 5 5600X \(6 core, 12 thread\)/)
   const ram = within(table).getByRole('row', { name: /memoria/i })
-  expect(ram.textContent).toContain('8 GB')
-  within(ram).getByText('Insufficiente')
+  await within(ram).findByText('Insufficiente')
+  // The scan is used only for the RAM check: the PC's own specs are not shown.
+  expect(table.textContent).not.toMatch(/Ryzen 5 5600X|RTX 3060|Windows 11/)
+  expect(within(table).queryByText('Il tuo PC')).toBeNull()
 })
 
 it('keeps the scan when Steam fails and scans again on request', async () => {

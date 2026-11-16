@@ -36,33 +36,6 @@ const LABELS: Record<RequirementKind, string> = {
   other: 'Note'
 }
 
-// What the scan found for one kind of requirement, as text.
-function pcValue(kind: RequirementKind, pc: ScannedPc): string {
-  switch (kind) {
-    case 'os':
-      return [pc.os.distro, pc.os.release].filter(Boolean).join(' ') || '—'
-    case 'cpu':
-      return pc.cpu.name ? `${pc.cpu.name} (${pc.cpu.cores} core, ${pc.cpu.threads} thread)` : '—'
-    case 'ram':
-      return pc.ram.totalGb ? pc.ram.totalGb + ' GB' : '—'
-    case 'gpu':
-      return (
-        pc.gpus
-          .filter((gpu) => gpu.name)
-          .map((gpu) =>
-            gpu.vramMb ? `${gpu.name} (${Math.round(gpu.vramMb / 1024)} GB)` : gpu.name
-          )
-          .join(', ') || '—'
-      )
-    case 'storage': {
-      const total = pc.storage.reduce((sum, disk) => sum + disk.sizeGb, 0)
-      return total ? total + ' GB totali' : '—'
-    }
-    default:
-      return '—'
-  }
-}
-
 // Only RAM can be checked reliably from Steam's text: CPU and GPU names need benchmarks.
 function ramVerdict(minimumGb: number | null, pc: ScannedPc | null): JSX.Element | null {
   if (!minimumGb || !pc?.ram.totalGb) return null
@@ -105,7 +78,7 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
         direction="row"
         sx={{ mt: 3, mb: 1, alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
       >
-        <Typography variant="h6">Requisiti minimi e il tuo PC</Typography>
+        <Typography variant="h6">Requisiti minimi</Typography>
         <Button
           size="small"
           onClick={scan.rescan}
@@ -145,12 +118,11 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
         </Alert>
       )}
       {rows.length > 0 && (
-        <Table size="small" aria-label="Requisiti minimi del gioco e componenti del tuo PC">
+        <Table size="small" aria-label="Requisiti minimi del gioco">
           <TableHead>
             <TableRow>
               <TableCell>Componente</TableCell>
               <TableCell>Minimo richiesto</TableCell>
-              <TableCell>Il tuo PC</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -159,9 +131,8 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
                 <TableCell component="th" scope="row" sx={{ whiteSpace: 'nowrap' }}>
                   {row.label || LABELS[row.kind]}
                 </TableCell>
-                <TableCell>{row.value}</TableCell>
                 <TableCell>
-                  {scan.pc ? pcValue(row.kind, scan.pc) : scan.scanning ? '…' : '—'}
+                  {row.value}
                   {row.kind === 'ram' && ramVerdict(minimumRamGb, scan.pc)}
                 </TableCell>
               </TableRow>
@@ -171,7 +142,7 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
       )}
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
         {fromSteam
-          ? 'Requisiti da Steam. Processore e scheda video vanno confrontati a mano.'
+          ? 'Requisiti da Steam. La RAM è confrontata con la scansione del tuo PC.'
           : 'Dati dimostrativi: verifica i requisiti ufficiali prima di acquistare un gioco.'}
       </Typography>
     </>
