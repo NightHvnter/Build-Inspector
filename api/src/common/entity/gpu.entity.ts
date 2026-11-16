@@ -1,11 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity('Gpu')
 export class GpuEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @CreateDateColumn()
   created_at: Date;
 
   @Column({ length: 255 })

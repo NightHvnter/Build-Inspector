@@ -3,6 +3,6 @@ export class CpuDto {
     created_at: Date | undefined;
     Name: string | undefined;
     Mark: number | undefined;
-    Cores: number | undefined;
-    Socket: string | undefined;
+    Cores: number | null | undefined;
+    Socket: string | null | undefined;
 }
