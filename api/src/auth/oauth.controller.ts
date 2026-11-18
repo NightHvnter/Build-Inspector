@@ -40,7 +40,7 @@ function provider(value: string): Provider {
   return value;
 }
 
-// Google and Discord sign-in for the desktop app:
+// Google, Discord and Steam sign-in for the desktop app:
 // 1. GET  /auth/:provider/start    the app opens this in the browser; redirects to the provider
 // 2. GET  /auth/:provider/callback the provider returns here; redirects to the app on 127.0.0.1
 // 3. POST /auth/oauth/exchange     the app trades its one-time code for the usual tokens
@@ -83,6 +83,7 @@ export class OAuthController {
     @Query('state') state: string,
     @Query('code') code: string | undefined,
     @Query('error') error: string | undefined,
+    @Query() query: Record<string, unknown>,
     @Res() res: Response,
   ): Promise<void> {
     const which = provider(name);
@@ -91,15 +92,17 @@ export class OAuthController {
       res.status(HttpStatus.BAD_REQUEST).type('html').send(FAILED_PAGE);
       return;
     }
-    if (error || typeof code !== 'string' || !code) {
-      res.redirect(
-        HttpStatus.FOUND,
-        appRedirect(login, { error: error === 'access_denied' ? 'denied' : 'failed' }),
-      );
+    // Steam answers with OpenID fields instead of a code; a cancel is openid.mode=cancel.
+    const steam = which === 'steam';
+    const denied = steam ? query['openid.mode'] === 'cancel' : error === 'access_denied';
+    if (denied || (!steam && (error || typeof code !== 'string' || !code))) {
+      res.redirect(HttpStatus.FOUND, appRedirect(login, { error: denied ? 'denied' : 'failed' }));
       return;
     }
     try {
-      const oneTime = await this.oauth.finish(login, code);
+      const oneTime = steam
+        ? await this.oauth.finishSteam(login, query)
+        : await this.oauth.finish(login, code as string);
       res.redirect(HttpStatus.FOUND, appRedirect(login, { code: oneTime }));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'unknown error';

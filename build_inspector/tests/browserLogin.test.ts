@@ -150,3 +150,28 @@ it('uses the same flow for Discord, with its own start address and messages', as
     message: 'Accesso non disponibile.'
   })
 })
+
+it('signs in a Steam account, which has no email', async () => {
+  const exchanges: unknown[] = []
+  api = createServer(async (req, res) => {
+    let text = ''
+    for await (const chunk of req) text += chunk
+    exchanges.push(JSON.parse(text))
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ...tokens, Username: 'Gabe.Newell', Email: null }))
+  })
+  const server = api
+  await new Promise<void>((ready) => server.listen(0, '127.0.0.1', ready))
+  const address = server.address()
+  const base = 'http://127.0.0.1:' + (address && typeof address !== 'string' ? address.port : 0)
+  const seen: URL[] = []
+  const client = createAccountClient(base, {
+    openBrowser: browser((start) => ({ code: CODE, state: start.searchParams.get('state')! }), seen)
+  })
+  expect(await client.signInWithProvider('steam')).toEqual({
+    ok: true,
+    data: { id: '7', name: 'Gabe.Newell', email: null }
+  })
+  expect(seen[0].pathname).toBe('/auth/steam/start')
+  expect(exchanges).toHaveLength(1)
+})

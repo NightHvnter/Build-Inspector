@@ -60,7 +60,7 @@ export class AuthService {
   private async issueTokens(user: {
     id: number;
     Username: string;
-    Email: string;
+    Email: string | null;
   }): Promise<UserLoginResDto> {
     // Payload a mano: nel JWT non finiscono Password o RefreshToken
     const payload = { sub: user.id, Username: user.Username, Email: user.Email };

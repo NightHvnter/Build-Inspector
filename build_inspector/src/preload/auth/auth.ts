@@ -120,8 +120,8 @@ export function createAccountClient(
       !Number.isSafeInteger(data.id) ||
       typeof data.Username !== 'string' ||
       !data.Username ||
-      typeof data.Email !== 'string' ||
-      !data.Email ||
+      // Steam accounts have no email.
+      (data.Email !== null && (typeof data.Email !== 'string' || !data.Email)) ||
       typeof data.accessToken !== 'string' ||
       !data.accessToken ||
       typeof data.refreshToken !== 'string' ||
@@ -129,7 +129,10 @@ export function createAccountClient(
     )
       return invalidReply
     tokens = { access: data.accessToken, refresh: data.refreshToken }
-    return { ok: true, data: { id: String(data.id), name: data.Username, email: data.Email } }
+    return {
+      ok: true,
+      data: { id: String(data.id), name: data.Username, email: data.Email as string | null }
+    }
   }
 
   async function refreshSession(): Promise<Result<User | null>> {

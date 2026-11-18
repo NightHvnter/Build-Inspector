@@ -41,7 +41,25 @@ function DiscordLogo(): JSX.Element {
   )
 }
 
-const LOGOS: Record<LoginProvider, () => JSX.Element> = { google: GoogleLogo, discord: DiscordLogo }
+// A simplified Steam mark: the round badge with its piston.
+function SteamLogo(): JSX.Element {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="12" fill="#1b2838" />
+      <circle cx="15.5" cy="9" r="3.6" fill="none" stroke="#fff" strokeWidth="1.6" />
+      <circle cx="15.5" cy="9" r="1.6" fill="#fff" />
+      <path d="M4 14.5l5.6 2.3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="9.3" cy="16.6" r="2.2" fill="#fff" />
+      <path d="M10.6 15.2l2.9-4.1" stroke="#fff" strokeWidth="1.6" />
+    </svg>
+  )
+}
+
+const LOGOS: Record<LoginProvider, () => JSX.Element> = {
+  google: GoogleLogo,
+  discord: DiscordLogo,
+  steam: SteamLogo
+}
 
 export function AuthForm({ mode }: { mode: AuthMode }): JSX.Element {
   const {

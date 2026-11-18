@@ -76,3 +76,13 @@ it('offers Discord too, and names it while waiting', async () => {
   await screen.findByText(/Completa l’accesso con Discord nel browser/)
   expect(screen.queryByRole('button', { name: 'Continua con Google' })).toBeNull()
 })
+
+it('offers Steam as the third provider', () => {
+  const signInWithProvider = vi.fn(() => new Promise(() => {}))
+  open({ signInWithProvider: signInWithProvider as never })
+  expect(
+    screen.getAllByRole('button', { name: /^Continua con/ }).map((button) => button.textContent)
+  ).toEqual(['Continua con Google', 'Continua con Discord', 'Continua con Steam'])
+  fireEvent.click(screen.getByRole('button', { name: 'Continua con Steam' }))
+  expect(signInWithProvider).toHaveBeenCalledWith('steam')
+})

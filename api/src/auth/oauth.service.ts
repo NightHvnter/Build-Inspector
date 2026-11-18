@@ -8,8 +8,10 @@ import { UserService } from '../user/user.service.js';
 import { AuthService } from './auth.service.js';
 import { UserLoginResDto } from '../common/dto/user.dto.js';
 
-export const PROVIDERS = ['google', 'discord'] as const;
+export const PROVIDERS = ['google', 'discord', 'steam'] as const;
 export type Provider = (typeof PROVIDERS)[number];
+// Google and Discord use OAuth 2.0; Steam uses OpenID 2.0 (see the Steam section below).
+type OAuthProvider = Exclude<Provider, 'steam'>;
 
 export function isProvider(value: unknown): value is Provider {
   return PROVIDERS.includes(value as Provider);
@@ -25,6 +27,7 @@ export interface AppRequest {
 
 interface PendingLogin extends AppRequest {
   provider: Provider;
+  apiState: string; // the API's own state, sent to the provider (AppRequest.state is the app's)
   providerVerifier: string;
   expires: number;
 }
@@ -62,7 +65,7 @@ const MAX_PENDING = 1000;
 const random = (): string => randomBytes(32).toString('base64url');
 const s256 = (verifier: string): string => createHash('sha256').update(verifier).digest('base64url');
 
-const SETTINGS: Record<Provider, ProviderSettings> = {
+const SETTINGS: Record<OAuthProvider, ProviderSettings> = {
   google: {
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
@@ -138,7 +141,13 @@ export class OAuthService {
     private readonly identities: Repository<UserIdentityEntity>,
   ) {}
 
-  private settings(provider: Provider): ProviderSettings & {
+  private callbackUrl(provider: Provider): string {
+    const base = this.config.get<string>('OAUTH_CALLBACK_BASE');
+    if (!base) throw new ServiceUnavailableException(`${provider} login is not configured`);
+    return `${base.replace(/\/+$/, '')}/auth/${provider}/callback`;
+  }
+
+  private settings(provider: OAuthProvider): ProviderSettings & {
     clientId: string;
     clientSecret: string;
     redirectUri: string;
@@ -146,15 +155,14 @@ export class OAuthService {
     const settings = SETTINGS[provider];
     const clientId = this.config.get<string>(settings.clientIdKey);
     const clientSecret = this.config.get<string>(settings.clientSecretKey);
-    const base = this.config.get<string>('OAUTH_CALLBACK_BASE');
-    if (!clientId || !clientSecret || !base)
+    if (!clientId || !clientSecret)
       throw new ServiceUnavailableException(`${provider} login is not configured`);
-    return {
-      ...settings,
-      clientId,
-      clientSecret,
-      redirectUri: `${base.replace(/\/+$/, '')}/auth/${provider}/callback`,
-    };
+    return { ...settings, clientId, clientSecret, redirectUri: this.callbackUrl(provider) };
+  }
+
+  // Steam returns to a callback that carries the API's state, since OpenID 2.0 has none.
+  private steamReturnTo(state: string): string {
+    return `${this.callbackUrl('steam')}?state=${encodeURIComponent(state)}`;
   }
 
   private purge(): void {
@@ -165,12 +173,21 @@ export class OAuthService {
 
   // Step 1: the address of the provider's sign-in page for this app request.
   start(provider: Provider, app: AppRequest): string {
-    const settings = this.settings(provider);
+    // Fails before anything is stored when the provider isn't configured.
+    const settings = provider === 'steam' ? null : this.settings(provider);
+    if (provider === 'steam') this.callbackUrl('steam');
     this.purge();
     if (this.pending.size >= MAX_PENDING) throw new ServiceUnavailableException('Too many logins in progress');
     const state = random();
     const providerVerifier = random();
-    this.pending.set(state, { ...app, provider, providerVerifier, expires: Date.now() + LOGIN_TTL_MS });
+    this.pending.set(state, {
+      ...app,
+      provider,
+      apiState: state,
+      providerVerifier,
+      expires: Date.now() + LOGIN_TTL_MS,
+    });
+    if (!settings) return steamLoginUrl(this.steamReturnTo(state));
     const url = new URL(settings.authUrl);
     url.search = new URLSearchParams({
       client_id: settings.clientId,
@@ -196,11 +213,49 @@ export class OAuthService {
 
   // Step 2: the provider sent the browser back with a code. Returns the app's one-time code.
   async finish(login: PendingLogin, code: string): Promise<string> {
+    if (login.provider === 'steam') throw new UnauthorizedException('Steam sends no code');
     const profile = await this.fetchProfile(login.provider, code, login.providerVerifier);
-    const userId = await this.userFor(login.provider, profile);
+    return this.issueCode(login, await this.userFor(login.provider, profile));
+  }
+
+  // Step 2 for Steam: check Steam's signed answer with Steam itself, then read the name.
+  async finishSteam(login: PendingLogin, params: Record<string, unknown>): Promise<string> {
+    if (login.provider !== 'steam') throw new UnauthorizedException('Not a Steam login');
+    const steamId = await verifySteamLogin(params, this.steamReturnTo(login.apiState));
+    const profile: ExternalProfile = {
+      sub: steamId,
+      email: null,
+      emailVerified: false,
+      names: [...(await this.steamNames(steamId)), `steam-${steamId.slice(-6)}`],
+    };
+    return this.issueCode(login, await this.userFor('steam', profile));
+  }
+
+  private issueCode(login: PendingLogin, userId: number): string {
     const oneTime = random();
     this.codes.set(oneTime, { userId, challenge: login.challenge, expires: Date.now() + CODE_TTL_MS });
     return oneTime;
+  }
+
+  // The Steam display name: from the Web API with STEAM_API_KEY, else the public profile,
+  // which shows the name even when the rest of the profile is private.
+  private async steamNames(steamId: string): Promise<string[]> {
+    try {
+      const key = this.config.get<string>('STEAM_API_KEY');
+      if (key) {
+        const url = new URL('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/');
+        url.search = new URLSearchParams({ key, steamids: steamId }).toString();
+        const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        const name = response.ok ? (await response.json())?.response?.players?.[0]?.personaname : null;
+        return typeof name === 'string' && name.trim() ? [name.trim()] : [];
+      }
+      const response = await fetch(`https://steamcommunity.com/profiles/${steamId}/?xml=1`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      return response.ok ? parseSteamProfileName(await response.text()) : [];
+    } catch {
+      return []; // The name is a nicety: the login still works without it.
+    }
   }
 
   // Step 3: the app trades its one-time code, proving it started the login, for tokens.
@@ -215,7 +270,7 @@ export class OAuthService {
     return this.auth.signInUser(entry.userId);
   }
 
-  private async fetchProfile(provider: Provider, code: string, verifier: string): Promise<ExternalProfile> {
+  private async fetchProfile(provider: OAuthProvider, code: string, verifier: string): Promise<ExternalProfile> {
     const settings = this.settings(provider);
     const response = await fetch(settings.tokenUrl, {
       method: 'POST',
@@ -235,15 +290,15 @@ export class OAuthService {
   }
 
   // The external account's user: already linked, linked now by a verified email, or new.
+  // Without an email (Steam) it can only be linked or new: nothing to match an account by.
   private async userFor(provider: Provider, profile: ExternalProfile): Promise<number> {
     const linked = await this.identities.findOneBy({ Provider: provider, ProviderUserId: profile.sub });
     if (linked) {
       await this.renameFallback(linked.UserId, profile);
       return linked.UserId;
     }
-    if (!profile.email) throw new UnauthorizedException('No email from the provider');
 
-    const existing = await this.users.findByEmail(profile.email);
+    const existing = profile.email ? await this.users.findByEmail(profile.email) : null;
     if (existing && !profile.emailVerified)
       // Linking on an unverified address would let anyone take over that account.
       throw new UnauthorizedException('Email already in use');
@@ -322,4 +377,71 @@ export function parseDiscordUser(user: unknown): ExternalProfile {
     // The display name if set, then the account name (always plain a-z 0-9 . _).
     names: [text(u.global_name), text(u.username)].filter((n): n is string => n !== null),
   };
+}
+
+// ---- Steam (OpenID 2.0) ----
+// Steam has no OAuth: the browser comes back with a signed OpenID answer naming the account,
+// and the API asks Steam whether that answer is genuine (check_authentication).
+
+export const STEAM_LOGIN = 'https://steamcommunity.com/openid/login';
+const OPENID_NS = 'http://specs.openid.net/auth/2.0';
+const IDENTIFIER_SELECT = 'http://specs.openid.net/auth/2.0/identifier_select';
+const STEAM_ID = /^https:\/\/steamcommunity\.com\/openid\/id\/(7656119\d{10})$/;
+// Fields Steam must have signed for the answer to mean "this user, for this API".
+const MUST_BE_SIGNED = ['op_endpoint', 'claimed_id', 'identity', 'return_to', 'response_nonce'];
+
+export function steamLoginUrl(returnTo: string): string {
+  const url = new URL(STEAM_LOGIN);
+  url.search = new URLSearchParams({
+    'openid.ns': OPENID_NS,
+    'openid.mode': 'checkid_setup',
+    'openid.return_to': returnTo,
+    'openid.realm': new URL(returnTo).origin,
+    'openid.identity': IDENTIFIER_SELECT,
+    'openid.claimed_id': IDENTIFIER_SELECT,
+  }).toString();
+  return url.href;
+}
+
+// Returns the 17-digit SteamID once Steam has confirmed the answer, or throws.
+export async function verifySteamLogin(
+  params: Record<string, unknown>,
+  expectedReturnTo: string,
+): Promise<string> {
+  const openid: Record<string, string> = {};
+  for (const [key, value] of Object.entries(params))
+    if (key.startsWith('openid.') && typeof value === 'string') openid[key] = value;
+
+  if (openid['openid.mode'] === 'cancel') throw new UnauthorizedException('Steam login cancelled');
+  const steamId = STEAM_ID.exec(openid['openid.claimed_id'] ?? '')?.[1];
+  const signed = (openid['openid.signed'] ?? '').split(',');
+  if (
+    openid['openid.ns'] !== OPENID_NS ||
+    openid['openid.mode'] !== 'id_res' ||
+    openid['openid.op_endpoint'] !== STEAM_LOGIN ||
+    openid['openid.return_to'] !== expectedReturnTo ||
+    openid['openid.identity'] !== openid['openid.claimed_id'] ||
+    !steamId ||
+    !MUST_BE_SIGNED.every((field) => signed.includes(field)) ||
+    !openid['openid.sig'] ||
+    !openid['openid.assoc_handle']
+  )
+    throw new UnauthorizedException('Invalid Steam answer');
+
+  // Send the answer back to Steam unchanged, except for the mode, and let Steam check its signature.
+  const response = await fetch(STEAM_LOGIN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ ...openid, 'openid.mode': 'check_authentication' }),
+    signal: AbortSignal.timeout(10000),
+  });
+  const reply = response.ok ? await response.text() : '';
+  if (!/^is_valid:true$/m.test(reply)) throw new UnauthorizedException('Steam did not confirm the login');
+  return steamId;
+}
+
+// <steamID><![CDATA[Name]]></steamID> in https://steamcommunity.com/profiles/<id>/?xml=1
+export function parseSteamProfileName(xml: string): string[] {
+  const name = /<steamID><!\[CDATA\[([\s\S]*?)\]\]><\/steamID>/.exec(xml)?.[1]?.trim();
+  return name ? [name.slice(0, 64)] : [];
 }

@@ -26,10 +26,12 @@ export class UserDto {
   @MaxLength(255)
   Username: string;
 
+  // Null for Steam accounts, which have no email.
   @Expose()
+  @IsOptional()
   @IsEmail()
   @MaxLength(255)
-  Email: string;
+  Email: string | null;
 
   @Expose()
   @IsOptional()
@@ -66,7 +68,7 @@ export class UserLoginResDto {
   Username: string;
 
   @Expose()
-  Email: string;
+  Email: string | null; // null for Steam accounts
 
   @Expose()
   accessToken: string;
@@ -83,7 +85,7 @@ export class JwtUserPayload {
   Username: string;
 
   @Expose()
-  Email: string;
+  Email: string | null; // null for Steam accounts
 
   @Expose()
   iat?: number;

@@ -11,8 +11,9 @@ export class UserEntity {
   @Column({ length: 255, unique: true })
   Username: string;
 
-  @Column({ length: 255, unique: true })
-  Email: string;
+  // Null for Steam accounts: Steam shares no email. Still unique when set.
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  Email: string | null;
 
   // Null for accounts created through Google or Discord, which have no password.
   @Column({ type: 'varchar', length: 255, nullable: true })

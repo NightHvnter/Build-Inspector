@@ -3,7 +3,7 @@ export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 export interface User {
   id: string
   name: string
-  email: string
+  email: string | null // null for Steam accounts: Steam shares no email
 }
 
 export interface SignInRequest {
@@ -16,7 +16,7 @@ export interface SignUpRequest extends SignInRequest {
 }
 
 // Accounts users can sign in with through their browser, and how the app names them.
-export const LOGIN_PROVIDERS = { google: 'Google', discord: 'Discord' } as const
+export const LOGIN_PROVIDERS = { google: 'Google', discord: 'Discord', steam: 'Steam' } as const
 export type LoginProvider = keyof typeof LOGIN_PROVIDERS
 
 export function isLoginProvider(value: unknown): value is LoginProvider {
