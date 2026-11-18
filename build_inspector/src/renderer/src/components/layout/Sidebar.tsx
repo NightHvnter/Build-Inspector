@@ -18,7 +18,8 @@ import { useAuth } from '../../hooks/useAuth'
 const items = [
   { to: '/libreria', title: 'Esplora giochi', icon: 'grid' },
   { to: '/preferiti', title: 'Preferiti', icon: 'heart' },
-  { to: '/configurazione', title: 'La mia build', icon: 'chip' }
+  { to: '/configurazione', title: 'La mia build', icon: 'chip' },
+  { to: '/cronologia', title: 'Cronologia', icon: 'history' }
 ] as const
 
 export function Sidebar({ onLogout }: { onLogout: () => void }): JSX.Element {

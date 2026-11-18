@@ -19,7 +19,9 @@ export class AuthService {
   async signIn(userReq: UserLoginReqDto): Promise<UserLoginResDto> {
     const user = await this.userService.findByEmail(userReq.Email);
 
-    const valid = !!user && (await this.passwordService.verify(userReq.Password, user.Password));
+    // A Google-only account has no password, so a password login never matches it.
+    const valid =
+      !!user?.Password && (await this.passwordService.verify(userReq.Password, user.Password));
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     return this.issueTokens(user);
@@ -48,10 +50,17 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
+  // Signs in a user whose identity was already checked elsewhere (Google or Discord login).
+  async signInUser(userId: number): Promise<UserLoginResDto> {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new UnauthorizedException();
+    return this.issueTokens(user);
+  }
+
   private async issueTokens(user: {
     id: number;
     Username: string;
-    Email: string;
+    Email: string | null;
   }): Promise<UserLoginResDto> {
     // Payload a mano: nel JWT non finiscono Password o RefreshToken
     const payload = { sub: user.id, Username: user.Username, Email: user.Email };

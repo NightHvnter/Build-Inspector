@@ -3,6 +3,7 @@ import type { AuthService } from '../services/authService'
 import type { AuthContextValue } from '../contexts/AuthContext'
 import type { SignInRequest, SignUpRequest, User } from '../types/auth'
 import type { Result } from '../services/result'
+import type { LoginProvider } from '../../../shared/auth'
 import { useLoading } from './useLoading'
 
 // L'hook coordina le richieste; è il backend a decidere se autenticare l'utente.
@@ -46,6 +47,21 @@ export function useAuthController(service: AuthService): AuthContextValue {
     [service, runWithLoading]
   )
 
+  // No loading overlay here: the user is in the browser, and must be able to cancel from the app.
+  const signInWithProvider = useCallback(
+    async (provider: LoginProvider): Promise<Result<User>> => {
+      const result = await service.signInWithProvider(provider)
+      if (result.ok && mounted.current) {
+        setUser(result.data)
+        setSessionError('')
+      }
+      return result
+    },
+    [service]
+  )
+
+  const cancelBrowserSignIn = useCallback(() => service.cancelBrowserSignIn(), [service])
+
   const signOut = useCallback(async (): Promise<Result<null>> => {
     const result = await runWithLoading(() => service.signOut(), 'Uscita in corso…')
     if (result.ok && mounted.current) setUser(null)
@@ -59,6 +75,8 @@ export function useAuthController(service: AuthService): AuthContextValue {
     sessionError,
     signIn,
     signUp,
-    signOut
+    signOut,
+    signInWithProvider,
+    cancelBrowserSignIn
   }
 }

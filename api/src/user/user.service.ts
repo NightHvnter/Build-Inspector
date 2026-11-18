@@ -42,7 +42,7 @@ export class UserService {
   ): Promise<UserEntity> {
     const entity = this.userRepository.create({
       ...data,
-      Email: this.normalizeEmail(data.Email),
+      Email: data.Email ? this.normalizeEmail(data.Email) : null,
       RefreshToken: null,
     });
     return this.userRepository.save(entity);

@@ -13,4 +13,11 @@ export class CpuService {
   async findOne(id: number): (Promise<Cpu | null>) {
     return await this.CpuRepo.findOneBy({ id })
   }
+
+  async findAll(): Promise<{ Name: string; Mark: number }[]> {
+    return await this.CpuRepo.find({
+      select: { Name: true, Mark: true },
+      order: { Name: 'ASC' },
+    });
+  }
 }

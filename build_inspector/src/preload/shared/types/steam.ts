@@ -7,7 +7,28 @@ export interface SteamSearchResult {
 export type SteamSearchReply =
   { ok: true; data: SteamSearchResult[] } | { ok: false; message: string }
 
+// One line of a game's minimum requirements, as plain text.
+export type RequirementKind = 'os' | 'cpu' | 'ram' | 'gpu' | 'storage' | 'directx' | 'other'
+export interface RequirementRow {
+  kind: RequirementKind
+  label: string // Steam's own label, e.g. "Processore"; empty for unlabelled notes
+  value: string
+}
+
+// A game's minimum PC requirements from Steam (GET /steam/games/:appId on the API).
+export interface GameRequirements {
+  appId: number
+  name: string
+  minimum: RequirementRow[] // empty when Steam lists none
+  ramGb: number | null
+  storageGb: number | null
+}
+
+export type GameRequirementsReply =
+  { ok: true; data: GameRequirements } | { ok: false; message: string }
+
 // What the preload exposes to the renderer as window.api.steam.
 export interface SteamApi {
   search(term: string): Promise<SteamSearchReply>
+  requirements(appId: number): Promise<GameRequirementsReply>
 }

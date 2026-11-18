@@ -13,4 +13,11 @@ export class GpuService {
   async findOne(id: number): (Promise<Gpu | null>) {
     return await this.GpuRepo.findOneBy({ id })
   }
+
+  async findAll(): Promise<{ Name: string; Mark: number }[]> {
+    return await this.GpuRepo.find({
+      select: { Name: true, Mark: true },
+      order: { Name: 'ASC' },
+    });
+  }
 }

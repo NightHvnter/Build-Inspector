@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2d2f36"/>
+      <stop offset="1" stop-color="#1b1c21"/>
+    </linearGradient>
+    <linearGradient id="rose" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6a3b3"/>
+      <stop offset="1" stop-color="#d93d5f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- tile -->
+  <rect x="32" y="32" width="960" height="960" rx="216" fill="url(#bg)"/>
+
+  <!-- chip pins -->
+  <g stroke="#6a6c76" stroke-width="34" stroke-linecap="round">
+    <path d="M300 150v70M400 150v70M500 150v70"/>
+    <path d="M150 300h70M150 400h70M150 500h70"/>
+    <path d="M300 660v70M660 300h70"/>
+  </g>
+
+  <!-- chip body -->
+  <rect x="220" y="220" width="440" height="440" rx="64" fill="#25262b" stroke="#8a8c96" stroke-width="34"/>
+  <rect x="300" y="300" width="150" height="150" rx="26" fill="#3a3c44"/>
+
+  <!-- lens -->
+  <path d="M770 770L872 872" stroke="url(#rose)" stroke-width="84" stroke-linecap="round"/>
+  <circle cx="630" cy="630" r="196" fill="#202126" stroke="url(#rose)" stroke-width="52"/>
+
+  <!-- check -->
+  <path d="M545 635l62 62 120-128" fill="none" stroke="#f0f0f2" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -18,5 +18,7 @@ export const authService: AuthService = account
       getSession: async () => ({ ok: true, data: null }),
       signIn: unavailable,
       signUp: unavailable,
-      signOut: unavailable
+      signOut: unavailable,
+      signInWithProvider: unavailable,
+      cancelBrowserSignIn: async () => ({ ok: true, data: null })
     }

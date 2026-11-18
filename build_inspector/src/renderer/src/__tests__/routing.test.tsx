@@ -95,9 +95,19 @@ it('ripristina ricerca e ordinamento dalla URL e gestisce le pagine sconosciute'
   expect(screen.getByRole('heading', { name: 'Pagina non trovata' })).toBeTruthy()
 })
 
+it('chiede l’accesso prima del confronto con il PC', async () => {
+  renderRoute('/confronto/1091500')
+  await waitFor(() =>
+    expect(screen.getByTestId('route').textContent).toBe('/login?next=%2Fconfronto%2F1091500')
+  )
+})
+
 it('non accetta destinazioni esterne e controlla la conferma password', () => {
   expect(getAuthDestination('?next=https://example.com')).toBe('/libreria')
   expect(getAuthDestination('?next=%2Fpreferiti')).toBe('/preferiti')
+  expect(getAuthDestination('?next=%2Fconfronto%2F1091500')).toBe('/confronto/1091500')
+  expect(getAuthDestination('?next=%2Fconfronto%2F..%2Flogin')).toBe('/libreria')
+  expect(getAuthDestination('?next=%2Fconfronto%2F1%2Fextra')).toBe('/libreria')
   expect(
     validateAuthForm('register', {
       name: 'Test',

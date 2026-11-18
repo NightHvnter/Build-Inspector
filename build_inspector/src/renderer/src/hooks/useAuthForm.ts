@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { AuthMode, AuthValues, FieldErrors } from '../types/auth'
+import type { LoginProvider } from '../../../shared/auth'
 import { validateAuthForm } from '../utils/authValidation'
 import { getAuthDestination } from '../utils/authNavigation'
 import { useAuth } from './useAuth'
@@ -17,6 +18,11 @@ interface AuthFormState {
   busy: boolean
   change: <K extends keyof AuthValues>(field: K, value: AuthValues[K]) => void
   submit: (event: FormEvent<HTMLFormElement>) => Promise<void>
+  // Google or Discord sign-in: the user finishes it in the browser, so the form waits
+  // (showing which provider) and can cancel.
+  inBrowser: LoginProvider | null
+  signInWithProvider: (provider: LoginProvider) => Promise<void>
+  cancelBrowser: () => void
 }
 
 export function useAuthForm(mode: AuthMode): AuthFormState {
@@ -29,6 +35,7 @@ export function useAuthForm(mode: AuthMode): AuthFormState {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const submitting = useRef(false)
+  const [inBrowser, setInBrowser] = useState<LoginProvider | null>(null)
   const active = useRef(true)
   const auth = useAuth()
   const { isLoading } = useLoading()
@@ -92,5 +99,37 @@ export function useAuthForm(mode: AuthMode): AuthFormState {
       submitting.current = false
     }
   }
-  return { values, errors, feedback, busy: isLoading, change, submit }
+  const signInWithProvider = async (provider: LoginProvider): Promise<void> => {
+    if (submitting.current || isLoading) return
+    submitting.current = true
+    setInBrowser(provider)
+    setFeedback(null)
+    try {
+      const result = await auth.signInWithProvider(provider)
+      if (!active.current) return
+      if (result.ok) {
+        navigate(getAuthDestination(search), { replace: true })
+        return
+      }
+      setFeedback({ severity: 'error', message: result.message })
+    } finally {
+      submitting.current = false
+      if (active.current) setInBrowser(null)
+    }
+  }
+  const cancelBrowser = (): void => {
+    void auth.cancelBrowserSignIn()
+  }
+
+  return {
+    values,
+    errors,
+    feedback,
+    busy: isLoading || inBrowser !== null,
+    change,
+    submit,
+    inBrowser,
+    signInWithProvider,
+    cancelBrowser
+  }
 }

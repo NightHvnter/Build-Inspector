@@ -8,5 +8,10 @@ export interface ScannedPc {
     modules: { sizeGb: number; type: string; speedMhz: number; partNumber: string }[]
   }
   storage: { name: string; type: string; sizeGb: number }[]
+  freeStorageGb?: number // free space on all local drives; missing in older scans
   motherboard: { manufacturer: string; model: string }
+}
+// What the preload exposes to the renderer as window.api.scanner.
+export interface ScannerApi {
+  scan(): Promise<ScannedPc>
 }

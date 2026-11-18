@@ -26,21 +26,24 @@ export class UserDto {
   @MaxLength(255)
   Username: string;
 
+  // Null for Steam accounts, which have no email.
   @Expose()
+  @IsOptional()
   @IsEmail()
   @MaxLength(255)
-  Email: string;
+  Email: string | null;
 
   @Expose()
   @IsOptional()
   @IsString()
   RefreshToken: string | null;
 
+  // Null for accounts created through Google or Discord: they can't sign in with a password.
   @Expose()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(255)
-  Password: string;
+  Password: string | null;
 }
 
 export class UserLoginReqDto {
@@ -65,7 +68,7 @@ export class UserLoginResDto {
   Username: string;
 
   @Expose()
-  Email: string;
+  Email: string | null; // null for Steam accounts
 
   @Expose()
   accessToken: string;
@@ -82,7 +85,7 @@ export class JwtUserPayload {
   Username: string;
 
   @Expose()
-  Email: string;
+  Email: string | null; // null for Steam accounts
 
   @Expose()
   iat?: number;
