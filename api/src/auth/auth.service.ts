@@ -19,7 +19,9 @@ export class AuthService {
   async signIn(userReq: UserLoginReqDto): Promise<UserLoginResDto> {
     const user = await this.userService.findByEmail(userReq.Email);
 
-    const valid = !!user && (await this.passwordService.verify(userReq.Password, user.Password));
+    // A Google-only account has no password, so a password login never matches it.
+    const valid =
+      !!user?.Password && (await this.passwordService.verify(userReq.Password, user.Password));
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     return this.issueTokens(user);
@@ -45,6 +47,13 @@ export class AuthService {
     const match = await this.passwordService.verify(refreshToken, user.RefreshToken);
     if (!match) throw new UnauthorizedException('Invalid refresh token');
 
+    return this.issueTokens(user);
+  }
+
+  // Signs in a user whose identity was already checked elsewhere (Google login).
+  async signInUser(userId: number): Promise<UserLoginResDto> {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new UnauthorizedException();
     return this.issueTokens(user);
   }
 

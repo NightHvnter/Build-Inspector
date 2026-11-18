@@ -3,6 +3,7 @@
 // tokens must stay out of the renderer.
 import type { AccountApi, Result, User } from '../../shared/auth'
 import { API_URL } from '../apiUrl'
+import { browserLogin, cancelBrowserLogin, type BrowserLoginResult } from './browserLogin'
 
 export type Reply = { ok: true; data: unknown } | { ok: false; status: number; message: string }
 
@@ -17,7 +18,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 const invalidReply = { ok: false, message: 'Risposta del servizio account non valida.' } as const
 
-export function createAccountClient(address: string = API_URL): AccountClient {
+const BROWSER_LOGIN_ERRORS: Record<Exclude<BrowserLoginResult, { ok: true }>['reason'], string> = {
+  denied: 'Accesso con Google annullato.',
+  cancelled: 'Accesso con Google annullato.',
+  email_taken: 'Esiste già un account con questa email: accedi con email e password.',
+  timeout: 'Accesso con Google scaduto. Riprova.',
+  browser: 'Impossibile aprire il browser. Riprova.',
+  failed: 'Accesso con Google non riuscito. Riprova.'
+}
+
+interface AccountClientOptions {
+  // How to show the provider's sign-in page: the main process passes shell.openExternal.
+  openBrowser?: (url: string) => Promise<void>
+}
+
+export function createAccountClient(
+  address: string = API_URL,
+  { openBrowser }: AccountClientOptions = {}
+): AccountClient {
   // L'indirizzo è configurato all'avvio, mai da un campo o da un link nella pagina.
   const base = URL.canParse(address) ? new URL(address) : null
   const secure =
@@ -51,7 +69,9 @@ export function createAccountClient(address: string = API_URL): AccountClient {
           401:
             path === '/auth/login'
               ? 'Email o password errate.'
-              : 'La sessione è scaduta. Accedi di nuovo.',
+              : path === '/auth/oauth/exchange'
+                ? 'Accesso con Google non riuscito. Riprova.'
+                : 'La sessione è scaduta. Accedi di nuovo.',
           404: 'Elemento non trovato.',
           409: 'Nome utente o email già in uso.'
         }
@@ -158,6 +178,28 @@ export function createAccountClient(address: string = API_URL): AccountClient {
       )
         return invalidReply
       return { ok: true, data: { message: 'Account creato. Ora puoi accedere.' } }
+    },
+    async signInWithGoogle() {
+      if (!base || !secure || !openBrowser)
+        return { ok: false, message: 'Accesso con Google non disponibile.' }
+      const root = base.href.replace(/\/$/, '')
+      const login = await browserLogin({
+        startUrl: ({ port, challenge, state }) =>
+          root +
+          '/auth/google/start?' +
+          new URLSearchParams({ port: String(port), challenge, state }),
+        openBrowser
+      })
+      if (!login.ok) return { ok: false, message: BROWSER_LOGIN_ERRORS[login.reason] }
+      const reply = await post('/auth/oauth/exchange', {
+        code: login.code,
+        verifier: login.verifier
+      })
+      return reply.ok ? acceptSession(reply.data) : reply
+    },
+    async cancelBrowserSignIn() {
+      cancelBrowserLogin()
+      return { ok: true, data: null }
     },
     async signOut() {
       if (!tokens) return { ok: true, data: null }

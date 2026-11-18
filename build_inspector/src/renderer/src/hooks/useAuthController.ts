@@ -46,6 +46,18 @@ export function useAuthController(service: AuthService): AuthContextValue {
     [service, runWithLoading]
   )
 
+  // No loading overlay here: the user is in the browser, and must be able to cancel from the app.
+  const signInWithGoogle = useCallback(async (): Promise<Result<User>> => {
+    const result = await service.signInWithGoogle()
+    if (result.ok && mounted.current) {
+      setUser(result.data)
+      setSessionError('')
+    }
+    return result
+  }, [service])
+
+  const cancelBrowserSignIn = useCallback(() => service.cancelBrowserSignIn(), [service])
+
   const signOut = useCallback(async (): Promise<Result<null>> => {
     const result = await runWithLoading(() => service.signOut(), 'Uscita in corso…')
     if (result.ok && mounted.current) setUser(null)
@@ -59,6 +71,8 @@ export function useAuthController(service: AuthService): AuthContextValue {
     sessionError,
     signIn,
     signUp,
-    signOut
+    signOut,
+    signInWithGoogle,
+    cancelBrowserSignIn
   }
 }

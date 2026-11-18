@@ -36,11 +36,12 @@ export class UserDto {
   @IsString()
   RefreshToken: string | null;
 
+  // Null for accounts created through Google: they can't sign in with a password.
   @Expose()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(255)
-  Password: string;
+  Password: string | null;
 }
 
 export class UserLoginReqDto {

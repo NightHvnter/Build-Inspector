@@ -1,10 +1,10 @@
-import { ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { BrowserWindow, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
 import { accountChannels, type SignInRequest, type SignUpRequest } from '../shared/auth'
 import { createAccountClient } from '../preload/auth/auth'
 import { historyChannels, isHistoryRecord, toHistoryEntry } from '../shared/history'
 
 export function registerAccountIpc(rendererUrl: string): void {
-  const client = createAccountClient()
+  const client = createAccountClient(undefined, { openBrowser: (url) => shell.openExternal(url) })
   const trustedPage = new URL(rendererUrl)
   function trusted(event: IpcMainInvokeEvent): boolean {
     const frame = event.senderFrame
@@ -31,6 +31,20 @@ export function registerAccountIpc(rendererUrl: string): void {
       : refused
   )
   ipcMain.handle(accountChannels.signOut, (event) => (trusted(event) ? client.signOut() : refused))
+  ipcMain.handle(accountChannels.signInWithGoogle, async (event) => {
+    if (!trusted(event)) return refused
+    const result = await client.signInWithGoogle()
+    // The user was in the browser: bring the app back in front.
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (window && !window.isDestroyed()) {
+      if (window.isMinimized()) window.restore()
+      window.focus()
+    }
+    return result
+  })
+  ipcMain.handle(accountChannels.cancelBrowserSignIn, (event) =>
+    trusted(event) ? client.cancelBrowserSignIn() : refused
+  )
 
   // Comparison history: requests go out with the user's tokens, which stay in this process.
   ipcMain.handle(historyChannels.list, async (event) => {

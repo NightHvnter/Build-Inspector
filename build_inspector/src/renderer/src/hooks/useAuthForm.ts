@@ -17,6 +17,10 @@ interface AuthFormState {
   busy: boolean
   change: <K extends keyof AuthValues>(field: K, value: AuthValues[K]) => void
   submit: (event: FormEvent<HTMLFormElement>) => Promise<void>
+  // Google sign-in: the user finishes it in the browser, so the form waits and can cancel.
+  inBrowser: boolean
+  signInWithGoogle: () => Promise<void>
+  cancelGoogle: () => void
 }
 
 export function useAuthForm(mode: AuthMode): AuthFormState {
@@ -29,6 +33,7 @@ export function useAuthForm(mode: AuthMode): AuthFormState {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const submitting = useRef(false)
+  const [inBrowser, setInBrowser] = useState(false)
   const active = useRef(true)
   const auth = useAuth()
   const { isLoading } = useLoading()
@@ -92,5 +97,37 @@ export function useAuthForm(mode: AuthMode): AuthFormState {
       submitting.current = false
     }
   }
-  return { values, errors, feedback, busy: isLoading, change, submit }
+  const signInWithGoogle = async (): Promise<void> => {
+    if (submitting.current || isLoading) return
+    submitting.current = true
+    setInBrowser(true)
+    setFeedback(null)
+    try {
+      const result = await auth.signInWithGoogle()
+      if (!active.current) return
+      if (result.ok) {
+        navigate(getAuthDestination(search), { replace: true })
+        return
+      }
+      setFeedback({ severity: 'error', message: result.message })
+    } finally {
+      submitting.current = false
+      if (active.current) setInBrowser(false)
+    }
+  }
+  const cancelGoogle = (): void => {
+    void auth.cancelBrowserSignIn()
+  }
+
+  return {
+    values,
+    errors,
+    feedback,
+    busy: isLoading || inBrowser,
+    change,
+    submit,
+    inBrowser,
+    signInWithGoogle,
+    cancelGoogle
+  }
 }

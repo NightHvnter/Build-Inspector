@@ -16,7 +16,9 @@ const makeService = (): AuthService => ({
   getSession: vi.fn().mockResolvedValue({ ok: true, data: null }),
   signIn: vi.fn().mockResolvedValue({ ok: true, data: user }),
   signUp: vi.fn().mockResolvedValue({ ok: true, data: { message: 'Account creato.' } }),
-  signOut: vi.fn().mockResolvedValue({ ok: true, data: null })
+  signOut: vi.fn().mockResolvedValue({ ok: true, data: null }),
+  signInWithGoogle: vi.fn().mockResolvedValue({ ok: true, data: user }),
+  cancelBrowserSignIn: vi.fn().mockResolvedValue({ ok: true, data: null })
 })
 function authWrapper(service: AuthService) {
   return function Wrapper({ children }: { children: ReactNode }): React.JSX.Element {
