@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { ThemeProvider, Typography } from '@mui/material'
@@ -126,4 +126,27 @@ it('la pagina di recupero spiega il limite senza chiedere una email', async () =
   expect(screen.queryByRole('textbox')).toBeNull()
   fireEvent.click(screen.getByRole('link', { name: 'Torna al login' }))
   expect(screen.getByTestId('route').textContent).toBe('/login?next=%2Fconfigurazione')
+})
+
+it('si apre sulla Home, prima voce del menu, e la libreria mostra solo il catalogo', async () => {
+  renderRoute('/')
+  await waitFor(() => expect(screen.getByTestId('route').textContent).toBe('/home'))
+  expect(
+    screen.getByRole('heading', { name: 'Scopri se il tuo PC è pronto per i tuoi giochi.' })
+  ).toBeTruthy()
+  const menu = screen.getByRole('navigation', { name: 'Pagine' })
+  const links = within(menu).getAllByRole('link')
+  expect(links[0].textContent).toBe('Home')
+  expect(links[0].getAttribute('href')).toBe('/home')
+
+  fireEvent.click(within(menu).getByRole('link', { name: 'Esplora giochi' }))
+  await screen.findByRole('heading', { name: 'Catalogo giochi' })
+  expect(screen.queryByRole('heading', { name: /Scopri se il tuo PC/ })).toBeNull()
+})
+
+it('porta al catalogo dal pulsante della Home', async () => {
+  renderRoute('/home')
+  fireEvent.click(await screen.findByRole('link', { name: 'Esplora il catalogo' }))
+  await waitFor(() => expect(screen.getByTestId('route').textContent).toBe('/libreria'))
+  await screen.findByRole('heading', { name: 'Catalogo giochi' })
 })

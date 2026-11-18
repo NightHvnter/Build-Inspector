@@ -24,7 +24,7 @@ beforeEach(() => {
   resetHardwareCatalogCache()
   window.api = {
     account: {} as never,
-    steam: { search: vi.fn(), requirements },
+    steam: { search: vi.fn(), requirements, top: vi.fn() },
     scanner: { scan },
     hardware: { catalog },
     history: { list: vi.fn(), record, remove: vi.fn(), clear: vi.fn() }

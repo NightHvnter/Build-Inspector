@@ -7,5 +7,6 @@ export const IPC = {
   importScan: 'storage:importScan',
   steamSearch: 'steam:search',
   steamRequirements: 'steam:requirements',
+  steamTop: 'steam:top',
   hardwareCatalog: 'hardware:catalog'
 } as const

@@ -1,5 +1,6 @@
 import {
   Alert,
+  Box,
   Button,
   Chip,
   Dialog,
@@ -27,6 +28,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { authLink } from '../../utils/authNavigation'
 import { Icon } from '../Icon'
 import { GameCover } from './GameCover'
+import { FAVORITE_RED } from './GameCard'
 
 const LABELS: Record<RequirementKind, string> = {
   os: 'Sistema operativo',
@@ -206,7 +208,16 @@ export function GameDetails({
             <RequirementsSection key={game.id} game={game} />
           </DialogContent>
           <DialogActions sx={{ p: 2, flexWrap: 'wrap', gap: 1 }}>
-            <Button color="inherit" onClick={onFavorite}>
+            <Button
+              color="inherit"
+              onClick={onFavorite}
+              aria-pressed={favorite}
+              startIcon={
+                <Box component="span" sx={{ display: 'flex', color: favorite ? FAVORITE_RED : 'inherit' }}>
+                  <Icon name="heart" size={18} filled={favorite} />
+                </Box>
+              }
+            >
               {favorite ? 'Rimuovi dai preferiti' : 'Salva nei preferiti'}
             </Button>
             <Button component={Link} to="/configurazione" onClick={onClose} variant="outlined">

@@ -22,7 +22,7 @@ export function AppLayout({
 
   const logout = async (): Promise<void> => {
     const result = await signOut()
-    if (result.ok) navigate('/libreria', { replace: true })
+    if (result.ok) navigate('/home', { replace: true })
     else setError(result.message)
   }
   return (

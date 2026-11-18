@@ -4,7 +4,7 @@ import type { ScannedPc } from '@shared/types'
 import { scanPc } from '../scanner/scanPc'
 import { saveMyPc, loadMyPc } from '../storage/myPc'
 import { addToHistory, listHistory, exportScan, importScan } from '../storage/history'
-import { getGameMinimumRequirements, searchSteamGames } from '../steam/steamcalls'
+import { getGameMinimumRequirements, getTopGames, searchSteamGames } from '../steam/steamcalls'
 import { getHardwareCatalog } from '../hardware/hardwareCalls'
 
 export function registerIpc(): void {
@@ -21,6 +21,7 @@ export function registerIpc(): void {
     const q = typeof term === 'string' ? term.trim().slice(0, 100) : ''
     return q ? searchSteamGames(q) : { ok: true, data: [] }
   })
+  ipcMain.handle(IPC.steamTop, () => getTopGames())
   ipcMain.handle(IPC.steamRequirements, (_e, appId: unknown) =>
     typeof appId === 'number' && Number.isSafeInteger(appId) && appId > 0
       ? getGameMinimumRequirements(appId)

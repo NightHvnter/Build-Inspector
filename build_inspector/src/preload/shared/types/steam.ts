@@ -27,8 +27,20 @@ export interface GameRequirements {
 export type GameRequirementsReply =
   { ok: true; data: GameRequirements } | { ok: false; message: string }
 
+// One of the most played games on Steam over the last 7 days (GET /steam/games/top).
+export interface TopGame {
+  appId: number
+  name: string
+  description: string
+  genres: string[]
+  image: string // the cover on Steam's CDN
+}
+
+export type TopGamesReply = { ok: true; data: TopGame[] } | { ok: false; message: string }
+
 // What the preload exposes to the renderer as window.api.steam.
 export interface SteamApi {
   search(term: string): Promise<SteamSearchReply>
   requirements(appId: number): Promise<GameRequirementsReply>
+  top(): Promise<TopGamesReply>
 }

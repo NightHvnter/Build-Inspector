@@ -8,6 +8,8 @@ export interface Game {
   reqGpu: string
   reqRam: number
   baseFps: number
+  // True for games found by searching Steam, as opposed to the catalog's featured ones.
+  fromSteamSearch?: boolean
 }
 
 // Catalogo dimostrativo: i requisiti e i punteggi esistenti non sono benchmark verificati.

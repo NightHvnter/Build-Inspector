@@ -22,21 +22,26 @@ const paths = {
   save: 'M4 3h13l4 4v14H3V3z M7 3v6h10V3 M7 21v-8h10v8',
   monitor: 'M3 3h18v13H3z M12 16v5 M8 21h8',
   info: 'M12 11v6 M12 7h.01 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
+  home: 'M3 11l9-8 9 8 M5 9.5V20h5v-6h4v6h5V9.5',
   history: 'M12 7v5l3 2 M3 12a9 9 0 1 0 3-6.7 M3 4v4h4'
 }
 
 export function Icon({
   name,
-  size = 20
+  size = 20,
+  filled = false
 }: {
   name: keyof typeof paths
   size?: number
+  // Fills closed shapes (e.g. a favorite's heart) with the current colour.
+  filled?: boolean
 }): JSX.Element {
+  const fill = filled ? 'currentColor' : 'none'
   return (
     <SvgIcon
-      sx={{ fontSize: size, fill: 'none' }}
+      sx={{ fontSize: size, fill }}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={fill}
       stroke="currentColor"
       strokeWidth="1.7"
       strokeLinecap="round"
