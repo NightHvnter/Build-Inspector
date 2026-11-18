@@ -11,7 +11,7 @@ export interface AuthContextValue {
   signIn: AuthService['signIn']
   signUp: AuthService['signUp']
   signOut: AuthService['signOut']
-  signInWithGoogle: AuthService['signInWithGoogle']
+  signInWithProvider: AuthService['signInWithProvider']
   cancelBrowserSignIn: AuthService['cancelBrowserSignIn']
 }
 
@@ -23,6 +23,6 @@ export const AuthContext = createContext<AuthContextValue>({
   signIn: authService.signIn,
   signUp: authService.signUp,
   signOut: authService.signOut,
-  signInWithGoogle: authService.signInWithGoogle,
+  signInWithProvider: authService.signInWithProvider,
   cancelBrowserSignIn: authService.cancelBrowserSignIn
 })

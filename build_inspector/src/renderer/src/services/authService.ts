@@ -19,6 +19,6 @@ export const authService: AuthService = account
       signIn: unavailable,
       signUp: unavailable,
       signOut: unavailable,
-      signInWithGoogle: unavailable,
+      signInWithProvider: unavailable,
       cancelBrowserSignIn: async () => ({ ok: true, data: null })
     }

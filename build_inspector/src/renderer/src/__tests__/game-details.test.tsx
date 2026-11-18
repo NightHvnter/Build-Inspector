@@ -57,7 +57,7 @@ function authDefaults(): AuthContextValue {
     signIn: vi.fn(),
     signUp: vi.fn(),
     signOut: vi.fn(),
-    signInWithGoogle: vi.fn(),
+    signInWithProvider: vi.fn(),
     cancelBrowserSignIn: vi.fn()
   }
 }

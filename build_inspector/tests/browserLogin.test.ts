@@ -62,7 +62,7 @@ it('signs in through the browser and proves it started the login', async () => {
   const client = createAccountClient(base, {
     openBrowser: browser((start) => ({ code: CODE, state: start.searchParams.get('state')! }), seen)
   })
-  expect(await client.signInWithGoogle()).toEqual({
+  expect(await client.signInWithProvider('google')).toEqual({
     ok: true,
     data: { id: '7', name: 'Mario.Rossi', email: 'mario@example.com' }
   })
@@ -87,7 +87,7 @@ it('turns the API’s errors into messages', async () => {
     const client = createAccountClient(base, {
       openBrowser: browser((start) => ({ error, state: start.searchParams.get('state')! }))
     })
-    expect(await client.signInWithGoogle()).toEqual({ ok: false, message })
+    expect(await client.signInWithProvider('google')).toEqual({ ok: false, message })
   }
   expect(exchanges).toEqual([])
 })
@@ -121,8 +121,32 @@ it('reports a browser that could not be opened', async () => {
       throw new Error('no browser')
     }
   })
-  expect(await client.signInWithGoogle()).toEqual({
+  expect(await client.signInWithProvider('google')).toEqual({
     ok: false,
     message: 'Impossibile aprire il browser. Riprova.'
+  })
+})
+
+it('uses the same flow for Discord, with its own start address and messages', async () => {
+  const { base, exchanges } = await fakeApi()
+  const seen: URL[] = []
+  const client = createAccountClient(base, {
+    openBrowser: browser((start) => ({ code: CODE, state: start.searchParams.get('state')! }), seen)
+  })
+  expect((await client.signInWithProvider('discord')).ok).toBe(true)
+  expect(seen[0].pathname).toBe('/auth/discord/start')
+  expect(exchanges).toHaveLength(1)
+
+  const denied = createAccountClient(base, {
+    openBrowser: browser((start) => ({ error: 'denied', state: start.searchParams.get('state')! }))
+  })
+  expect(await denied.signInWithProvider('discord')).toEqual({
+    ok: false,
+    message: 'Accesso con Discord annullato.'
+  })
+  // Only the providers the app knows can be asked for.
+  expect(await client.signInWithProvider('myspace' as never)).toEqual({
+    ok: false,
+    message: 'Accesso non disponibile.'
   })
 })

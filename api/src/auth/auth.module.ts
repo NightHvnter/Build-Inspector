@@ -10,7 +10,7 @@ import { UserEntity } from '../user/user.entity.js';
 import { AuthController } from './auth.controller.js';
 import { UserController } from '../user/user.controller.js';
 import { UserIdentityEntity } from '../user/identity.entity.js';
-import { GoogleOAuthService } from './google-oauth.service.js';
+import { OAuthService } from './oauth.service.js';
 import { OAuthController } from './oauth.controller.js';
 
 @Module({
@@ -19,7 +19,7 @@ import { OAuthController } from './oauth.controller.js';
     TypeOrmModule.forFeature([UserEntity, UserIdentityEntity]), // serve a UserService per @InjectRepository
     JwtModule.register({}), // i secret li passi già in sign/verify
   ],
-  providers: [PasswordService, AuthService, UserService, JwtAuthGuard, GoogleOAuthService],
+  providers: [PasswordService, AuthService, UserService, JwtAuthGuard, OAuthService],
   controllers: [AuthController, UserController, OAuthController],
   exports: [PasswordService, UserService, JwtAuthGuard],
 })

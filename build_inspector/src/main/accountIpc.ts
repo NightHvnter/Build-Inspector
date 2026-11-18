@@ -1,5 +1,10 @@
 import { BrowserWindow, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
-import { accountChannels, type SignInRequest, type SignUpRequest } from '../shared/auth'
+import {
+  accountChannels,
+  isLoginProvider,
+  type SignInRequest,
+  type SignUpRequest
+} from '../shared/auth'
 import { createAccountClient } from '../preload/auth/auth'
 import { historyChannels, isHistoryRecord, toHistoryEntry } from '../shared/history'
 
@@ -31,9 +36,9 @@ export function registerAccountIpc(rendererUrl: string): void {
       : refused
   )
   ipcMain.handle(accountChannels.signOut, (event) => (trusted(event) ? client.signOut() : refused))
-  ipcMain.handle(accountChannels.signInWithGoogle, async (event) => {
-    if (!trusted(event)) return refused
-    const result = await client.signInWithGoogle()
+  ipcMain.handle(accountChannels.signInWithProvider, async (event, provider: unknown) => {
+    if (!trusted(event) || !isLoginProvider(provider)) return refused
+    const result = await client.signInWithProvider(provider)
     // The user was in the browser: bring the app back in front.
     const window = BrowserWindow.fromWebContents(event.sender)
     if (window && !window.isDestroyed()) {

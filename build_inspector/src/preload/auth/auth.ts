@@ -1,7 +1,13 @@
 // Account client for the Build Inspector API (/auth/user, /auth/login, /auth/refresh, /auth/logout).
 // It runs in the main process (imported by main/accountIpc.ts): the API has no CORS, and the
 // tokens must stay out of the renderer.
-import type { AccountApi, Result, User } from '../../shared/auth'
+import {
+  LOGIN_PROVIDERS,
+  type AccountApi,
+  type LoginProvider,
+  type Result,
+  type User
+} from '../../shared/auth'
 import { API_URL } from '../apiUrl'
 import { browserLogin, cancelBrowserLogin, type BrowserLoginResult } from './browserLogin'
 
@@ -18,13 +24,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 const invalidReply = { ok: false, message: 'Risposta del servizio account non valida.' } as const
 
-const BROWSER_LOGIN_ERRORS: Record<Exclude<BrowserLoginResult, { ok: true }>['reason'], string> = {
-  denied: 'Accesso con Google annullato.',
-  cancelled: 'Accesso con Google annullato.',
-  email_taken: 'Esiste già un account con questa email: accedi con email e password.',
-  timeout: 'Accesso con Google scaduto. Riprova.',
-  browser: 'Impossibile aprire il browser. Riprova.',
-  failed: 'Accesso con Google non riuscito. Riprova.'
+type BrowserLoginError = Exclude<BrowserLoginResult, { ok: true }>['reason']
+
+function browserLoginError(reason: BrowserLoginError, provider: LoginProvider): string {
+  const name = LOGIN_PROVIDERS[provider]
+  const messages: Record<BrowserLoginError, string> = {
+    denied: `Accesso con ${name} annullato.`,
+    cancelled: `Accesso con ${name} annullato.`,
+    email_taken: 'Esiste già un account con questa email: accedi con email e password.',
+    timeout: `Accesso con ${name} scaduto. Riprova.`,
+    browser: 'Impossibile aprire il browser. Riprova.',
+    failed: `Accesso con ${name} non riuscito. Riprova.`
+  }
+  return messages[reason]
 }
 
 interface AccountClientOptions {
@@ -70,7 +82,7 @@ export function createAccountClient(
             path === '/auth/login'
               ? 'Email o password errate.'
               : path === '/auth/oauth/exchange'
-                ? 'Accesso con Google non riuscito. Riprova.'
+                ? 'Accesso non riuscito. Riprova.'
                 : 'La sessione è scaduta. Accedi di nuovo.',
           404: 'Elemento non trovato.',
           409: 'Nome utente o email già in uso.'
@@ -179,18 +191,18 @@ export function createAccountClient(
         return invalidReply
       return { ok: true, data: { message: 'Account creato. Ora puoi accedere.' } }
     },
-    async signInWithGoogle() {
-      if (!base || !secure || !openBrowser)
-        return { ok: false, message: 'Accesso con Google non disponibile.' }
+    async signInWithProvider(provider) {
+      if (!base || !secure || !openBrowser || !Object.hasOwn(LOGIN_PROVIDERS, provider))
+        return { ok: false, message: 'Accesso non disponibile.' }
       const root = base.href.replace(/\/$/, '')
       const login = await browserLogin({
         startUrl: ({ port, challenge, state }) =>
           root +
-          '/auth/google/start?' +
+          `/auth/${provider}/start?` +
           new URLSearchParams({ port: String(port), challenge, state }),
         openBrowser
       })
-      if (!login.ok) return { ok: false, message: BROWSER_LOGIN_ERRORS[login.reason] }
+      if (!login.ok) return { ok: false, message: browserLoginError(login.reason, provider) }
       const reply = await post('/auth/oauth/exchange', {
         code: login.code,
         verifier: login.verifier

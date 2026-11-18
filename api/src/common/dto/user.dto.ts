@@ -36,7 +36,7 @@ export class UserDto {
   @IsString()
   RefreshToken: string | null;
 
-  // Null for accounts created through Google: they can't sign in with a password.
+  // Null for accounts created through Google or Discord: they can't sign in with a password.
   @Expose()
   @IsOptional()
   @IsString()

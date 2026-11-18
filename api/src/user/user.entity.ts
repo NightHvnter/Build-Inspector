@@ -14,7 +14,7 @@ export class UserEntity {
   @Column({ length: 255, unique: true })
   Email: string;
 
-  // Null for accounts created through Google, which have no password.
+  // Null for accounts created through Google or Discord, which have no password.
   @Column({ type: 'varchar', length: 255, nullable: true })
   Password: string | null;
 

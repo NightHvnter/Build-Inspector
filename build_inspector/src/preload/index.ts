@@ -13,7 +13,8 @@ const account: AccountApi = {
   signIn: (values) => ipcRenderer.invoke(accountChannels.signIn, values),
   signUp: (values) => ipcRenderer.invoke(accountChannels.signUp, values),
   signOut: () => ipcRenderer.invoke(accountChannels.signOut),
-  signInWithGoogle: () => ipcRenderer.invoke(accountChannels.signInWithGoogle),
+  signInWithProvider: (provider) =>
+    ipcRenderer.invoke(accountChannels.signInWithProvider, provider),
   cancelBrowserSignIn: () => ipcRenderer.invoke(accountChannels.cancelBrowserSignIn)
 }
 const steam: SteamApi = {

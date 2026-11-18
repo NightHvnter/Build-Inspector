@@ -50,7 +50,7 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
-  // Signs in a user whose identity was already checked elsewhere (Google login).
+  // Signs in a user whose identity was already checked elsewhere (Google or Discord login).
   async signInUser(userId: number): Promise<UserLoginResDto> {
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException();

@@ -17,7 +17,7 @@ const makeService = (): AuthService => ({
   signIn: vi.fn().mockResolvedValue({ ok: true, data: user }),
   signUp: vi.fn().mockResolvedValue({ ok: true, data: { message: 'Account creato.' } }),
   signOut: vi.fn().mockResolvedValue({ ok: true, data: null }),
-  signInWithGoogle: vi.fn().mockResolvedValue({ ok: true, data: user }),
+  signInWithProvider: vi.fn().mockResolvedValue({ ok: true, data: user }),
   cancelBrowserSignIn: vi.fn().mockResolvedValue({ ok: true, data: null })
 })
 function authWrapper(service: AuthService) {

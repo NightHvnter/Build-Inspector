@@ -28,7 +28,7 @@ export class UserIdentityEntity {
   @Column({ length: 20 })
   Provider: string;
 
-  // The provider's own stable id for the account (Google's "sub").
+  // The provider's own stable id for the account (Google's "sub", Discord's user id).
   @Column({ length: 255 })
   ProviderUserId: string;
 

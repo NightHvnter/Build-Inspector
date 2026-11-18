@@ -16,7 +16,7 @@ function open(auth: Partial<AuthContextValue>): void {
     signIn: vi.fn(),
     signUp: vi.fn(),
     signOut: vi.fn(),
-    signInWithGoogle: vi.fn(),
+    signInWithProvider: vi.fn(),
     cancelBrowserSignIn: vi.fn().mockResolvedValue({ ok: true, data: null }),
     ...auth
   }
@@ -36,10 +36,10 @@ function open(auth: Partial<AuthContextValue>): void {
 
 it('waits for the browser, then opens the requested page', async () => {
   let finish: (value: unknown) => void = () => {}
-  const signInWithGoogle = vi.fn(() => new Promise((resolve) => (finish = resolve)))
-  open({ signInWithGoogle: signInWithGoogle as never })
+  const signInWithProvider = vi.fn(() => new Promise((resolve) => (finish = resolve)))
+  open({ signInWithProvider: signInWithProvider as never })
   fireEvent.click(screen.getByRole('button', { name: 'Continua con Google' }))
-  expect(signInWithGoogle).toHaveBeenCalledTimes(1)
+  expect(signInWithProvider).toHaveBeenCalledWith('google')
   await screen.findByText(/Completa l’accesso con Google nel browser/)
   // The email/password form is locked meanwhile.
   expect((screen.getByRole('button', { name: 'Accedi' }) as HTMLButtonElement).disabled).toBe(true)
@@ -54,7 +54,7 @@ it('can be cancelled and shows why it failed', async () => {
     return { ok: true as const, data: null }
   })
   open({
-    signInWithGoogle: vi.fn(() => new Promise((resolve) => (finish = resolve))) as never,
+    signInWithProvider: vi.fn(() => new Promise((resolve) => (finish = resolve))) as never,
     cancelBrowserSignIn
   })
   fireEvent.click(screen.getByRole('button', { name: 'Continua con Google' }))
@@ -66,4 +66,13 @@ it('can be cancelled and shows why it failed', async () => {
       (screen.getByRole('button', { name: 'Continua con Google' }) as HTMLButtonElement).disabled
     ).toBe(false)
   )
+})
+
+it('offers Discord too, and names it while waiting', async () => {
+  const signInWithProvider = vi.fn(() => new Promise(() => {}))
+  open({ signInWithProvider: signInWithProvider as never })
+  fireEvent.click(screen.getByRole('button', { name: 'Continua con Discord' }))
+  expect(signInWithProvider).toHaveBeenCalledWith('discord')
+  await screen.findByText(/Completa l’accesso con Discord nel browser/)
+  expect(screen.queryByRole('button', { name: 'Continua con Google' })).toBeNull()
 })
