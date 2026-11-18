@@ -2,7 +2,13 @@ import { IGameDetails, IRequirements } from "./steam";
 
 type SteamReply<T> = { ok: true; message: string; data: T } | { ok: false; message: string };
 import { apiUrl } from "../apiUrl";
-import type { GameRequirementsReply, SteamSearchReply, SteamSearchResult } from "../shared/types/steam";
+import type {
+  GameRequirementsReply,
+  SteamSearchReply,
+  SteamSearchResult,
+  TopGame,
+  TopGamesReply,
+} from "../shared/types/steam";
 import { parseRequirements, sizeInGb } from "./requirements";
 
 // GET /steam/games/search?q= on the API, which proxies Steam's store search.
@@ -103,4 +109,34 @@ export async function getGameMinimumRequirements(appId: number): Promise<GameReq
       storageGb: storage ? sizeInGb(storage.value) : null,
     },
   };
+}
+
+// GET /steam/games/top on the API: the most played games over the last 7 days.
+export async function getTopGames(): Promise<TopGamesReply> {
+  try {
+    const req = await fetch(apiUrl("/steam/games/top"), { signal: AbortSignal.timeout(30000) });
+    if (!req.ok) return { ok: false, message: "Classifica di Steam non disponibile." };
+    const rows: unknown = await req.json();
+    const text = (value: unknown, max: number): string | null =>
+      typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
+    const data: TopGame[] = [];
+    for (const row of Array.isArray(rows) ? rows.slice(0, 24) : []) {
+      const r = (row ?? {}) as Record<string, unknown>;
+      const name = text(r.name, 200);
+      const image = text(r.image, 500);
+      // Only Steam's own image servers, as the page's content security policy allows.
+      const safeImage = image && URL.canParse(image) && /^https:\/\/[a-z]+\.akamai\.steamstatic\.com\//.test(image);
+      if (!Number.isSafeInteger(r.appId) || (r.appId as number) <= 0 || !name || !safeImage) continue;
+      data.push({
+        appId: r.appId as number,
+        name,
+        description: text(r.description, 300) ?? "",
+        genres: (Array.isArray(r.genres) ? r.genres : []).filter((g): g is string => typeof g === "string").slice(0, 6),
+        image: image as string,
+      });
+    }
+    return { ok: true, data };
+  } catch {
+    return { ok: false, message: "Classifica di Steam non raggiungibile. Controlla che l'API sia avviata." };
+  }
 }

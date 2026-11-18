@@ -14,7 +14,9 @@ import { Icon } from '../Icon'
 import { useAuth } from '../../hooks/useAuth'
 
 const titles: Record<string, string> = {
+  '/home': 'Home',
   '/libreria': 'Libreria',
+  '/cronologia': 'Cronologia',
   '/preferiti': 'Preferiti',
   '/configurazione': 'La mia build',
   '/login': 'Accedi',
@@ -40,7 +42,10 @@ export function Topbar({
       sx={{ borderBottom: 1, borderColor: 'divider' }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', gap: 1 }}>
-        <Typography variant="body2">{titles[pathname] ?? 'Pagina non trovata'}</Typography>
+        <Typography variant="body2">
+          {titles[pathname] ??
+            (pathname.startsWith('/confronto/') ? 'Confronto con il tuo PC' : 'Pagina non trovata')}
+        </Typography>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Tooltip title={mode === 'dark' ? 'Tema chiaro' : 'Tema scuro'}>
             <IconButton

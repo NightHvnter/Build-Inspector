@@ -16,6 +16,7 @@ import { Icon } from '../Icon'
 import { useAuth } from '../../hooks/useAuth'
 
 const items = [
+  { to: '/home', title: 'Home', icon: 'home' },
   { to: '/libreria', title: 'Esplora giochi', icon: 'grid' },
   { to: '/preferiti', title: 'Preferiti', icon: 'heart' },
   { to: '/configurazione', title: 'La mia build', icon: 'chip' },
@@ -43,7 +44,7 @@ export function Sidebar({ onLogout }: { onLogout: () => void }): JSX.Element {
     >
       <Button
         component={Link}
-        to="/libreria"
+        to="/home"
         color="inherit"
         sx={{ justifyContent: 'flex-start', p: 0, mt: 1, fontSize: 20 }}
       >

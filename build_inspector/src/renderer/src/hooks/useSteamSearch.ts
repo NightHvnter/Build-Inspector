@@ -17,11 +17,12 @@ export function steamGame(appId: number, name: string): Game {
     title: name,
     image: steamCover(appId),
     genre: [],
-    description: 'Trovato su Steam.',
+    description: 'Risultato della ricerca su Steam.',
     reqCpu: '',
     reqGpu: '',
     reqRam: 0,
-    baseFps: 0
+    baseFps: 0,
+    fromSteamSearch: true
   }
 }
 

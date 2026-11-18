@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { AuthPage } from './Login'
 import { Library } from './library'
+import { HomePage } from './home'
 import { CompareGame } from './compare'
 import { HistoryPage } from './history'
 import { PostRegistrazione } from './post-registrazione'
@@ -21,7 +22,8 @@ export function AppRoutes({
   return (
     <Routes>
       <Route element={<AppLayout mode={mode} toggleTheme={toggleTheme} />}>
-        <Route index element={<Navigate to="/libreria" replace />} />
+        <Route index element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<HomePage />} />
         <Route path="/libreria" element={<Library key={'catalog-' + (user?.id ?? 'guest')} />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/registrazione" element={<AuthPage mode="register" />} />

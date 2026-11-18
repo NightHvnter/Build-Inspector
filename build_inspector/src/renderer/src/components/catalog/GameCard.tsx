@@ -54,7 +54,7 @@ export function GameCard({
         aria-label={'Scopri ' + game.title}
         sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
       >
-        <GameCover game={game} />
+        <GameCover game={game} badge={game.fromSteamSearch ? 'Steam' : undefined} />
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', flex: 1, gap: 1 }}>
           {game.genre.length > 0 && (
             <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap' }}>

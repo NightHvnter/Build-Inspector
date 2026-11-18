@@ -23,7 +23,11 @@ const PC: ScannedPc = {
 
 beforeEach(() => {
   resetPcScanCache()
-  window.api = { account: {} as never, steam: { search: vi.fn(), requirements }, scanner: { scan } }
+  window.api = {
+    account: {} as never,
+    steam: { search: vi.fn(), requirements, top: vi.fn() },
+    scanner: { scan }
+  }
 })
 
 afterEach(() => {

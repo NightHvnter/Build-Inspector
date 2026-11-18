@@ -74,7 +74,12 @@ export function PreRegistrazione({ isLoggedIn }: { isLoggedIn: boolean }): JSX.E
             Confronta i requisiti minimi dei giochi Steam con i componenti del tuo computer, prima
             di acquistare o aggiornare.
           </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            useFlexGap
+            sx={{ flexWrap: 'wrap' }}
+          >
             {isLoggedIn ? (
               <>
                 <Button
@@ -111,6 +116,15 @@ export function PreRegistrazione({ isLoggedIn }: { isLoggedIn: boolean }): JSX.E
                 </Button>
               </>
             )}
+            <Button
+              component={Link}
+              to="/libreria"
+              variant="outlined"
+              size="large"
+              startIcon={<Icon name="grid" size={18} />}
+            >
+              Esplora il catalogo
+            </Button>
           </Stack>
         </Box>
 

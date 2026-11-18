@@ -19,7 +19,8 @@ const account: AccountApi = {
 }
 const steam: SteamApi = {
   search: (term) => ipcRenderer.invoke(IPC.steamSearch, term),
-  requirements: (appId) => ipcRenderer.invoke(IPC.steamRequirements, appId)
+  requirements: (appId) => ipcRenderer.invoke(IPC.steamRequirements, appId),
+  top: () => ipcRenderer.invoke(IPC.steamTop)
 }
 const scanner: ScannerApi = {
   scan: () => ipcRenderer.invoke(IPC.scan)
