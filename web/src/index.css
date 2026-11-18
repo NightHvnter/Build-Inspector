@@ -1,14 +1,20 @@
-html, body, #root {
-  padding: 0;
-  margin: 0;
-  display: flex;
-  line-height: 1.6;
+*, *::before, *::after {
   box-sizing: border-box;
-  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
-* {
-  font-family: "Noto Sans", sans-serif !important;  
+html, body, #root {
+  min-height: 100vh;
+  font-family: "Noto Sans", sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
@@ -31,8 +37,14 @@ html, body, #root {
   padding: 0.6rem 1.2rem;
   border: 1px solid transparent;
   border-radius: 10px;
-  font: noto-sans, sans-serif;
+  font-family: inherit;
   font-size: 1rem;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
