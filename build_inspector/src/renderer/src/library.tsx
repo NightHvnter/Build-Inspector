@@ -1,5 +1,5 @@
 import { useState, type JSX } from 'react'
-import { Alert, Box, Button, Divider, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, Chip, Divider, Paper, Stack, Typography } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { STEAM_GAMES, type Game } from './games'
 import { useAuth } from './hooks/useAuth'
@@ -28,22 +28,27 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
     <>
       {!favoritesOnly && <PreRegistrazione isLoggedIn={!!user} />}
       <Box component="section" aria-labelledby="catalog-title">
-        <Stack
-          direction="row"
-          sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
-        >
-          <Typography id="catalog-title" component={favoritesOnly ? 'h1' : 'h2'} variant="h5">
-            {favoritesOnly ? 'I tuoi preferiti' : 'Catalogo'} (
-            {favoritesOnly ? favorites.length : STEAM_GAMES.length})
+        <Box sx={{ mb: 2.5 }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
+            <Typography id="catalog-title" component={favoritesOnly ? 'h1' : 'h2'} variant="h5">
+              {favoritesOnly ? 'I tuoi preferiti' : 'Catalogo giochi'}
+            </Typography>
+            <Chip
+              size="small"
+              label={favoritesOnly ? favorites.length : STEAM_GAMES.length}
+              aria-label={
+                (favoritesOnly ? favorites.length : STEAM_GAMES.length) +
+                (favoritesOnly ? ' preferiti' : ' giochi in catalogo')
+              }
+              sx={{ fontWeight: 600 }}
+            />
+          </Stack>
+          <Typography color="text.secondary" variant="body2">
+            {favoritesOnly
+              ? 'I giochi che hai salvato con il cuore.'
+              : 'Cerca qualsiasi gioco Steam, o scegli tra quelli in evidenza. Apri un gioco per vederne i requisiti.'}
           </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: { xs: 'none', lg: 'block' } }}
-          >
-            Seleziona un gioco per vedere i dettagli.
-          </Typography>
-        </Stack>
+        </Box>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -54,16 +59,22 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
             {catalog.steamError}
           </Alert>
         )}
-        <GameFilters
-          search={catalog.search}
-          genre={catalog.genre}
-          genres={catalog.genres}
-          sort={catalog.sort}
-          onChange={catalog.updateFilters}
-        />
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', my: 2 }}>
-          <Typography variant="caption" color="text.secondary" role="status">
-            {catalog.games.length} giochi disponibili
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <GameFilters
+            search={catalog.search}
+            genre={catalog.genre}
+            genres={catalog.genres}
+            sort={catalog.sort}
+            onChange={catalog.updateFilters}
+          />
+        </Paper>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ alignItems: 'center', justifyContent: 'space-between', minHeight: 40, my: 1.5 }}
+        >
+          <Typography variant="body2" color="text.secondary" role="status">
+            {catalog.games.length === 1 ? '1 gioco' : `${catalog.games.length} giochi`}
             {catalog.steamLoading && ' · Cerco su Steam…'}
           </Typography>
           {catalog.hasFilters && (
@@ -110,13 +121,19 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
           />
         )}
       </Box>
-      <Divider sx={{ mt: 4, mb: 2 }} />
-      <Stack component="footer" direction="row" sx={{ justifyContent: 'space-between' }}>
+      <Divider sx={{ mt: 6, mb: 2 }} />
+      <Stack
+        component="footer"
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1}
+        sx={{ justifyContent: 'space-between' }}
+      >
         <Typography variant="caption" color="text.secondary">
-          Build Inspector
+          © {new Date().getFullYear()} Build Inspector
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Catalogo dimostrativo
+          Requisiti dei giochi da Steam · Punteggi dei componenti da PassMark. Sono stime, non
+          garanzie di prestazioni.
         </Typography>
       </Stack>
       <GameDetails

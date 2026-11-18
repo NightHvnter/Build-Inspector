@@ -1,8 +1,8 @@
 import {
+  Box,
   Card,
   CardActionArea,
-  CardContent,
-  Divider,
+  Chip,
   IconButton,
   Stack,
   Tooltip,
@@ -12,6 +12,9 @@ import type { JSX } from 'react'
 import type { Game } from '../../games'
 import { Icon } from '../Icon'
 import { GameCover } from './GameCover'
+
+// Bright enough on the cards' dark button and on the light theme alike.
+export const FAVORITE_RED = '#ff4d5e'
 
 export function GameCard({
   game,
@@ -30,33 +33,69 @@ export function GameCard({
     <Card
       component="article"
       variant="outlined"
-      sx={{ position: 'relative', height: '100%', '&:hover': { borderColor: 'primary.main' } }}
+      sx={{
+        position: 'relative',
+        height: '100%',
+        borderRadius: 2,
+        transition: 'transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease',
+        '&:hover': {
+          borderColor: 'primary.main',
+          transform: 'translateY(-2px)',
+          boxShadow: 4
+        },
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+          '&:hover': { transform: 'none' }
+        }
+      }}
     >
       <CardActionArea
         onClick={onOpen}
         aria-label={'Scopri ' + game.title}
-        sx={{ height: '100%', display: 'block' }}
+        sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
       >
         <GameCover game={game} />
-        <CardContent>
-          <Typography variant="caption" color="text.secondary">
-            {game.genre.slice(0, 2).join(' / ')}
-          </Typography>
-          <Typography component="h3" variant="h6" sx={{ my: 1 }}>
+        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', flex: 1, gap: 1 }}>
+          {game.genre.length > 0 && (
+            <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap' }}>
+              {game.genre.slice(0, 3).map((genre) => (
+                <Chip
+                  key={genre}
+                  label={genre}
+                  size="small"
+                  variant="outlined"
+                  sx={{ height: 22, fontSize: 11.5 }}
+                />
+              ))}
+            </Stack>
+          )}
+          <Typography component="h3" variant="h6" sx={{ lineHeight: 1.3 }}>
             {game.title}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ minHeight: 44, mb: 2 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              flex: 1
+            }}
+          >
             {game.description}
           </Typography>
-          <Divider />
           <Stack
             direction="row"
-            sx={{ justifyContent: 'space-between', pt: 1.5, color: 'primary.main' }}
+            spacing={0.75}
+            sx={{ alignItems: 'center', color: 'primary.main', pt: 1 }}
           >
-            <Typography variant="body2">Vedi requisiti</Typography>
-            <Icon name="arrow" size={18} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Vedi requisiti
+            </Typography>
+            <Icon name="arrow" size={16} />
           </Stack>
-        </CardContent>
+        </Box>
       </CardActionArea>
       <Tooltip title={favoriteLabel}>
         <IconButton
@@ -69,12 +108,13 @@ export function GameCard({
             top: 8,
             right: 8,
             bgcolor: '#25262be6',
-            color: favorite ? '#ffa6b7' : '#fff',
-            borderRadius: 1,
+            // A solid red heart for favorites, an outline otherwise.
+            color: favorite ? FAVORITE_RED : '#fff',
+            borderRadius: 1.5,
             '&:hover': { bgcolor: '#25262b' }
           }}
         >
-          <Icon name="heart" size={19} />
+          <Icon name="heart" size={19} filled={favorite} />
         </IconButton>
       </Tooltip>
     </Card>
