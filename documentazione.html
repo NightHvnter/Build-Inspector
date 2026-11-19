@@ -517,7 +517,7 @@ score = 0.4·Sv + 0.3·Sl + 0.3·Sc</code></pre>
 <h2 id="script">8. Script Python</h2>
 <ol>
 <li><b><code>main.py</code></b>: con Playwright (Chromium headless) apre <code>cpubenchmark.net/CPU_mega_page.html</code> e <code>videocardbenchmark.net/gpu_list.php</code>, seleziona "mostra tutto", estrae la tabella <code>#cputable</code> con BeautifulSoup e salva <code>hardware_data_clean.json</code> (CPU: nome, core, mark, socket; GPU: nome, mark).</li>
-<li><b><code>update_db.py</code></b>: crea le tabelle se mancano, <b>svuota</b> <code>Cpu</code> e <code>Gpu</code>, e reinserisce tutto (togliendo le virgole dai mark, socket "Unknown" → NULL).</li>
+<li><b><code>update_db.py</code></b>: legge le credenziali da <code>.env</code> nella root (o dalle variabili d'ambiente <code>MYSQL_ROOT_PASSWORD</code>, <code>MYSQL_DATABASE</code>, <code>MYSQL_HOST</code>), crea le tabelle se mancano, <b>svuota</b> <code>Cpu</code> e <code>Gpu</code>, e reinserisce tutto (togliendo le virgole dai mark, socket "Unknown" → NULL).</li>
 </ol>
 <p>Dopo un aggiornamento l'app vede i nuovi dati al riavvio successivo (il catalogo è in cache per sessione).</p>
 
@@ -543,6 +543,7 @@ score = 0.4·Sv + 0.3·Sl + 0.3·Sc</code></pre>
 <li>URL API: solo HTTPS (HTTP solo per localhost), nessun redirect seguito.</li>
 <li>OAuth con PKCE doppia, <code>state</code>, codici monouso brevi, collegamento account solo su email verificata.</li>
 <li>Nessun numero di serie raccolto durante la scansione.</li>
+<li>Credenziali del database solo in <code>.env</code> (ignorato da git); nel repository c'è solo il modello <code>.env.example</code>.</li>
 </ul>
 
 <!-- ============================================================ -->
