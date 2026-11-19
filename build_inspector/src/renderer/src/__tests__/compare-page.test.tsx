@@ -24,7 +24,7 @@ beforeEach(() => {
   resetHardwareCatalogCache()
   window.api = {
     account: {} as never,
-    steam: { search: vi.fn(), requirements, top: vi.fn() },
+    steam: { search: vi.fn(), requirements, top: vi.fn(), topGenres: vi.fn(), details: vi.fn() },
     scanner: { scan },
     hardware: { catalog },
     history: { list: vi.fn(), record, remove: vi.fn(), clear: vi.fn() }
@@ -87,6 +87,22 @@ it('compares the game with the scanned PC', async () => {
   within(cpu).getByText('Soddisfatto')
   const ram = within(table).getByRole('row', { name: /memoria/i })
   expect(ram.textContent).toContain('32 GB')
+})
+
+it('shows how much each part exceeds the requirement', async () => {
+  open('/confronto/1091500')
+  await screen.findByText('Il tuo PC raggiunge i requisiti minimi')
+  const table = screen.getByRole('table', { name: /requisiti minimi e componenti/i })
+  // 34.224 PassMark against the i7-6700's 8.032, the weaker of the two listed.
+  const cpu = within(table).getByRole('row', { name: /processore/i })
+  within(cpu).getByRole('progressbar', { name: 'Qualità Processore: 426% del requisito minimo' })
+  within(cpu).getByText('Eccellente')
+  // 32 GB against 12 GB.
+  const ram = within(table).getByRole('row', { name: /memoria/i })
+  within(ram).getByText('267%')
+  // The weakest part sums the report up.
+  screen.getByText('Memoria rispetto al minimo')
+  screen.getByRole('progressbar', { name: '100% requisiti soddisfatti' })
 })
 
 it('rejects an invalid game id without calling Steam', () => {

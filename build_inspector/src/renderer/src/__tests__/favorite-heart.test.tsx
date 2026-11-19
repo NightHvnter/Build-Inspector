@@ -3,7 +3,15 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, expect, it, vi } from 'vitest'
 import { FAVORITE_RED, GameCard } from '../components/catalog/GameCard'
 import { GameDetails } from '../components/catalog/GameDetails'
-import { STEAM_GAMES } from '../games'
+import type { Game } from '../games'
+
+const GAME: Game = {
+  id: 730,
+  title: 'Counter-Strike 2',
+  image: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/header.jpg',
+  genre: ['Azione'],
+  description: 'Sparatutto tattico.'
+}
 
 afterEach(cleanup)
 
@@ -17,7 +25,7 @@ function heartIn(element: HTMLElement): { fill: string | null; color: string } {
 
 it('shows a solid red heart on a favorite card and an outline otherwise', () => {
   expect(FAVORITE_RED).toBe('#ff4d5e')
-  const game = STEAM_GAMES[0]
+  const game = GAME
   const { rerender } = render(
     <GameCard game={game} favorite onOpen={() => {}} onFavorite={() => {}} />
   )
@@ -38,7 +46,7 @@ it('uses the same heart on the dialog’s favorite button', () => {
   } as never
   render(
     <MemoryRouter>
-      <GameDetails game={STEAM_GAMES[0]} favorite onClose={() => {}} onFavorite={() => {}} />
+      <GameDetails game={GAME} favorite onClose={() => {}} onFavorite={() => {}} />
     </MemoryRouter>
   )
   const button = screen.getByRole('button', { name: 'Rimuovi dai preferiti' })

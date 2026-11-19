@@ -27,7 +27,8 @@ export interface GameRequirements {
 export type GameRequirementsReply =
   { ok: true; data: GameRequirements } | { ok: false; message: string }
 
-// One of the most played games on Steam over the last 7 days (GET /steam/games/top).
+// A Steam game's card data: one of the week's most played (GET /steam/games/top) or a
+// game asked for by id, e.g. a favourite (GET /steam/games/details?ids=).
 export interface TopGame {
   appId: number
   name: string
@@ -38,9 +39,22 @@ export interface TopGame {
 
 export type TopGamesReply = { ok: true; data: TopGame[] } | { ok: false; message: string }
 
+// The genres of the week's charted games, the most common first (GET /steam/games/top/genres).
+export type TopGenresReply = { ok: true; data: string[] } | { ok: false; message: string }
+
+// Longest genre name the API accepts.
+export const MAX_GENRE_LENGTH = 50
+
 // What the preload exposes to the renderer as window.api.steam.
 export interface SteamApi {
   search(term: string): Promise<SteamSearchReply>
   requirements(appId: number): Promise<GameRequirementsReply>
-  top(): Promise<TopGamesReply>
+  // With a genre: the most played games of that genre only.
+  top(genre?: string): Promise<TopGamesReply>
+  topGenres(): Promise<TopGenresReply>
+  // At most MAX_DETAILS_IDS ids per call.
+  details(appIds: number[]): Promise<TopGamesReply>
 }
+
+// Matches the API's limit on GET /steam/games/details.
+export const MAX_DETAILS_IDS = 100

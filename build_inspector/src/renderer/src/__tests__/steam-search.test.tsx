@@ -6,7 +6,10 @@ const search = vi.fn()
 
 beforeEach(() => {
   vi.useFakeTimers()
-  window.api = { account: {} as never, steam: { search, requirements: vi.fn(), top: vi.fn() } }
+  window.api = {
+    account: {} as never,
+    steam: { search, requirements: vi.fn(), top: vi.fn(), topGenres: vi.fn(), details: vi.fn() }
+  }
 })
 
 afterEach(() => {

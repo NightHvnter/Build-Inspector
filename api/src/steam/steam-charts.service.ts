@@ -2,18 +2,28 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { SteamChartDayEntity } from './chart-day.entity.js';
+import {
+  SteamDetailsService,
+  isPlayableGame,
+  type AppSummary,
+} from './steam-details.service.js';
 
 const CHART_URL = 'https://api.steampowered.com/ISteamChartsService/GetMostPlayedGames/v1/';
-const DETAILS_URL = 'https://store.steampowered.com/api/appdetails';
 const DAYS = 7;
 // A game missing from a day's top 100 counts as just below it that day.
 const MISSING_RANK = 101;
 const SAVE_EVERY_MS = 6 * 60 * 60 * 1000;
 const TOP_CACHE_MS = 60 * 60 * 1000;
-const DETAILS_CACHE_MS = 24 * 60 * 60 * 1000;
-// Steam's software genres (Animation & Modeling … Game Development): tools like Wallpaper
-// Engine are "type: game" on Steam but carry these.
-const SOFTWARE_GENRES = new Set(['51', '52', '53', '54', '55', '56', '57', '58', '59', '60']);
+// Charted games looked at: a week of daily top 100s rarely has more. Their card data comes
+// from the SteamGame table, refreshed through GetItems in 2 requests when needed.
+export const RANKED_MAX = 150;
+// Tags counted per game for the genre chips: the most voted ones describe it best.
+const TAGS_COUNTED = 5;
+
+export interface GenreCount {
+  name: string;
+  games: number; // how many charted games carry it
+}
 
 export interface ChartRow {
   Day: string;
@@ -29,13 +39,6 @@ export interface TopGame {
   image: string;
   averageRank: number; // over the days counted, missing days as 101
   days: number; // how many saved days the ranking covers (at most 7)
-}
-
-interface GameDetails {
-  name: string;
-  description: string;
-  genres: string[];
-  image: string;
 }
 
 // Games ordered by their average daily rank over the given days, best first.
@@ -57,70 +60,27 @@ export function rankOverDays(rows: ChartRow[], days: string[]): { appId: number;
     .map(({ appId, averageRank }) => ({ appId, averageRank: Math.round(averageRank * 10) / 10 }));
 }
 
-const ENTITIES: Record<string, string> = {
-  amp: '&',
-  lt: '<',
-  gt: '>',
-  quot: '"',
-  apos: "'",
-  nbsp: ' ',
-  // Accents found in Italian descriptions.
-  agrave: 'à',
-  egrave: 'è',
-  eacute: 'é',
-  igrave: 'ì',
-  ograve: 'ò',
-  ugrave: 'ù',
-  Egrave: 'È',
-  rsquo: '’',
-  hellip: '…',
-};
-
-function plainText(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, '')
-    .replace(/&(#\d+|[a-z]+);/gi, (entity, code: string) =>
-      code[0] === '#'
-        ? String.fromCodePoint(Number(code.slice(1)))
-        : (ENTITIES[code] ?? ENTITIES[code.toLowerCase()] ?? entity),
-    )
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-// appdetails' data for one app, or null when it isn't a game people play (DLC, tools, videos).
-export function parseGameDetails(data: unknown): GameDetails | null {
-  if (typeof data !== 'object' || data === null) return null;
-  const d = data as Record<string, unknown>;
-  const genres = Array.isArray(d.genres) ? (d.genres as { id?: unknown; description?: unknown }[]) : [];
-  if (d.type !== 'game' || genres.some((g) => SOFTWARE_GENRES.has(String(g.id)))) return null;
-  if (typeof d.name !== 'string' || typeof d.header_image !== 'string') return null;
-  const image = new URL(d.header_image);
-  if (image.protocol !== 'https:' || !image.hostname.endsWith('.steamstatic.com')) return null;
-  return {
-    name: d.name.trim(),
-    description: typeof d.short_description === 'string' ? plainText(d.short_description).slice(0, 300) : '',
-    genres: genres.map((g) => g.description).filter((g): g is string => typeof g === 'string'),
-    image: image.href,
-  };
-}
-
 @Injectable()
 export class SteamChartsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SteamChartsService.name);
   private timer: ReturnType<typeof setInterval> | undefined;
   private lastSave = 0;
-  private top: { at: number; limit: number; games: TopGame[] } | null = null;
-  private readonly details = new Map<number, { at: number; value: GameDetails | null }>();
+  private ranked: { at: number; games: TopGame[] } | null = null;
+  private rankedPending: Promise<TopGame[]> | null = null;
 
   constructor(
     @InjectRepository(SteamChartDayEntity)
     private readonly days: Repository<SteamChartDayEntity>,
+    private readonly details: SteamDetailsService,
   ) {}
 
   onModuleInit(): void {
     const save = (): void => {
-      this.saveLatestDay().catch((err) => this.logger.warn(`Steam chart not saved: ${err?.message ?? err}`));
+      this.saveLatestDay()
+        .catch((err) => this.logger.warn(`Steam chart not saved: ${err?.message ?? err}`))
+        // Fill the details cache in the background, so the first genre filter is quick.
+        .then(() => this.rankedGames())
+        .catch((err) => this.logger.warn(`Steam chart details not loaded: ${err?.message ?? err}`));
     };
     save();
     this.timer = setInterval(save, SAVE_EVERY_MS);
@@ -149,16 +109,50 @@ export class SteamChartsService implements OnModuleInit, OnModuleDestroy {
         PeakPlayers: Number.isSafeInteger(r.peak_in_game) ? (r.peak_in_game as number) : 0,
       }));
     await this.days.createQueryBuilder().insert().values(rows).orIgnore().execute();
-    this.top = null;
+    this.ranked = null;
     this.logger.log(`Saved Steam's most played games for ${day} (${rows.length})`);
   }
 
-  // The most played games over the last 7 saved days.
-  async topGames(limit = 6): Promise<TopGame[]> {
-    if (this.top && this.top.limit === limit && Date.now() - this.top.at < TOP_CACHE_MS) return this.top.games;
+  // The most played games over the last 7 saved days; with a genre, only the games that
+  // carry that tag (Steam's Italian names, e.g. "GDR"), still in chart order.
+  async topGames(limit = 6, genre?: string): Promise<TopGame[]> {
+    const games = await this.rankedGames();
+    if (!genre) return games.slice(0, limit);
+    const wanted = genre.trim().toLocaleLowerCase('it');
+    return games.filter((game) => game.genres.some((g) => g.toLocaleLowerCase('it') === wanted)).slice(0, limit);
+  }
+
+  // The genres of the charted games, the most common first.
+  async topGenres(): Promise<GenreCount[]> {
+    const counts = new Map<string, number>();
+    for (const game of await this.rankedGames())
+      for (const genre of new Set(game.genres.slice(0, TAGS_COUNTED))) counts.set(genre, (counts.get(genre) ?? 0) + 1);
+    return [...counts]
+      .map(([name, games]) => ({ name, games }))
+      .sort((a, b) => b.games - a.games || a.name.localeCompare(b.name, 'it'));
+  }
+
+  // Every playable game in the last 7 days' charts (at most RANKED_MAX), best first. Built
+  // once an hour from the SteamGame table.
+  private rankedGames(): Promise<TopGame[]> {
+    if (this.ranked && Date.now() - this.ranked.at < TOP_CACHE_MS) return Promise.resolve(this.ranked.games);
+    this.rankedPending ??= (async () => {
+      const { ranking, days } = await this.ranking();
+      const shortlist = ranking.slice(0, RANKED_MAX);
+      const rankOf = new Map(shortlist.map((row) => [row.appId, row.averageRank]));
+      const apps = await this.details.getMany(shortlist.map((row) => row.appId));
+      const games = apps.filter(isPlayableGame).map((app) => toTopGame(app, rankOf.get(app.appId)!, days));
+      this.ranked = { at: Date.now(), games };
+      return games;
+    })().finally(() => {
+      this.rankedPending = null;
+    });
+    return this.rankedPending;
+  }
+
+  private async ranking(): Promise<{ ranking: { appId: number; averageRank: number }[]; days: number }> {
     if (Date.now() - this.lastSave > SAVE_EVERY_MS)
       await this.saveLatestDay().catch((err) => this.logger.warn(`Steam chart not saved: ${err?.message ?? err}`));
-
     const days = (
       await this.days
         .createQueryBuilder('d')
@@ -167,31 +161,20 @@ export class SteamChartsService implements OnModuleInit, OnModuleDestroy {
         .limit(DAYS)
         .getRawMany<{ Day: string }>()
     ).map((row) => row.Day);
-    if (!days.length) return [];
+    if (!days.length) return { ranking: [], days: 0 };
     const rows = await this.days.find({ select: { Day: true, AppId: true, Rank: true }, where: { Day: In(days) } });
-
-    const games: TopGame[] = [];
-    for (const { appId, averageRank } of rankOverDays(rows, days)) {
-      if (games.length >= limit) break;
-      const details = await this.gameDetails(appId);
-      if (details) games.push({ appId, ...details, averageRank, days: days.length });
-    }
-    this.top = { at: Date.now(), limit, games };
-    return games;
+    return { ranking: rankOverDays(rows, days), days: days.length };
   }
+}
 
-  private async gameDetails(appId: number): Promise<GameDetails | null> {
-    const cached = this.details.get(appId);
-    if (cached && Date.now() - cached.at < DETAILS_CACHE_MS) return cached.value;
-    try {
-      const url = `${DETAILS_URL}?appids=${appId}&l=italian`;
-      const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      const body = response.ok ? ((await response.json()) as Record<string, { data?: unknown }>) : {};
-      const value = parseGameDetails(body[String(appId)]?.data);
-      this.details.set(appId, { at: Date.now(), value });
-      return value;
-    } catch {
-      return null; // Try again on the next request; don't remember a network failure.
-    }
-  }
+function toTopGame(app: AppSummary, averageRank: number, days: number): TopGame {
+  return {
+    appId: app.appId,
+    name: app.name,
+    description: app.description,
+    genres: app.genres,
+    image: app.image,
+    averageRank,
+    days,
+  };
 }

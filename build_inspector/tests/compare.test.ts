@@ -71,7 +71,7 @@ const PC = {
 it('compares each requirement with the scanned PC', () => {
   const rows = compareWithPc(CYBERPUNK, PC, CATALOG)
   expect(rows.map((row) => [row.label, row.yours, row.verdict])).toEqual([
-    ['Sistema operativo', 'Microsoft Windows 11 Pro 10.0.26200', 'check'],
+    ['Sistema operativo', 'Microsoft Windows 11 Pro 10.0.26200', 'ok'],
     ['Processore', 'Intel Core i7-12700K', 'ok'],
     ['Memoria', '8 GB', 'low'],
     ['Scheda video', 'Radeon RX 7900 XT', 'ok'],
@@ -82,7 +82,7 @@ it('compares each requirement with the scanned PC', () => {
   // Italian formatting groups digits from 5 digits on: 34.224, but 8032.
   expect(rows[1].detail).toBe('PassMark: 34.224 contro 8032 (Intel Core i7-6700 @ 3.40GHz).')
   expect(rows[2].detail).toBe('Mancano 4 GB.')
-  expect(summarize(rows)).toEqual({ ok: 3, low: 1, check: 1, info: 1 })
+  expect(summarize(rows)).toEqual({ ok: 4, low: 1, check: 0, info: 1 })
 })
 
 it('marks a weaker part as insufficient and unknown parts as to check', () => {

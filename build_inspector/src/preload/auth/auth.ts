@@ -8,7 +8,7 @@ import {
   type Result,
   type User
 } from '../../shared/auth'
-import { API_URL } from '../apiUrl'
+import { getApiBase } from '../apiUrl'
 import { browserLogin, cancelBrowserLogin, type BrowserLoginResult } from './browserLogin'
 
 export type Reply = { ok: true; data: unknown } | { ok: false; status: number; message: string }
@@ -45,10 +45,11 @@ interface AccountClientOptions {
 }
 
 export function createAccountClient(
-  address: string = API_URL,
+  address: string = getApiBase(),
   { openBrowser }: AccountClientOptions = {}
 ): AccountClient {
-  // L'indirizzo è configurato all'avvio, mai da un campo o da un link nella pagina.
+  // L'indirizzo è fissato all'avvio (variabile d'ambiente o impostazioni salvate), mai da un
+  // link nella pagina: cambiarlo dalle impostazioni riavvia l'app.
   const base = URL.canParse(address) ? new URL(address) : null
   const secure =
     base &&

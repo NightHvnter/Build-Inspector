@@ -1,5 +1,6 @@
-export { default as Home} from "./Home"
-export { default as Base} from "./Base"
-export { default as NotFound} from "./NotFound"
-export { default as Explore } from "./Explore"
-export { default as AboutUs } from "./AboutUs"
+export { default as Home } from "./Home";
+export { default as Base } from "./Base";
+export { default as NotFound } from "./NotFound";
+export { default as Explore } from "./Explore";
+export { default as AboutUs } from "./AboutUs";
+export { default as Download } from "./Download";

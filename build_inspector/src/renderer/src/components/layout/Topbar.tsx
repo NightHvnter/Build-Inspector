@@ -15,8 +15,8 @@ import { useAuth } from '../../hooks/useAuth'
 
 const titles: Record<string, string> = {
   '/home': 'Home',
-  '/libreria': 'Libreria',
   '/cronologia': 'Cronologia',
+  '/impostazioni': 'Impostazioni',
   '/preferiti': 'Preferiti',
   '/configurazione': 'La mia build',
   '/login': 'Accedi',

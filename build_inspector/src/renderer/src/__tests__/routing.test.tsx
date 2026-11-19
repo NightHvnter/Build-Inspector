@@ -9,6 +9,7 @@ import { createAppTheme } from '../theme'
 import { authService, type AuthService } from '../services/authService'
 import { validateAuthForm } from '../utils/authValidation'
 import { getAuthDestination } from '../utils/authNavigation'
+import { resetTopGamesCache } from '../hooks/useTopGames'
 
 function LocationProbe(): React.JSX.Element {
   const location = useLocation()
@@ -87,10 +88,36 @@ it('senza backend mostra un errore nel form e resta sulla pagina di accesso', as
 })
 
 it('ripristina ricerca e ordinamento dalla URL e gestisce le pagine sconosciute', async () => {
+  resetTopGamesCache()
+  const cover = (id: number): string =>
+    `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/header.jpg`
+  window.api = {
+    account: {} as never,
+    steam: {
+      search: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+      requirements: vi.fn(),
+      details: vi.fn(),
+      topGenres: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+      top: vi.fn().mockResolvedValue({
+        ok: true,
+        data: [
+          { appId: 570, name: 'Dota 2', description: '', genres: [], image: cover(570) },
+          {
+            appId: 1091500,
+            name: 'Cyberpunk 2077',
+            description: '',
+            genres: [],
+            image: cover(1091500)
+          }
+        ]
+      })
+    }
+  }
   renderRoute('/libreria?q=Cyberpunk&sort=alphabetical')
   expect(await screen.findByRole('heading', { name: 'Cyberpunk 2077' })).toBeTruthy()
   expect(screen.queryByRole('heading', { name: 'Dota 2' })).toBeNull()
   cleanup()
+  delete window.api
   renderRoute('/pagina-inesistente')
   expect(screen.getByRole('heading', { name: 'Pagina non trovata' })).toBeTruthy()
 })
@@ -103,11 +130,11 @@ it('chiede l’accesso prima del confronto con il PC', async () => {
 })
 
 it('non accetta destinazioni esterne e controlla la conferma password', () => {
-  expect(getAuthDestination('?next=https://example.com')).toBe('/libreria')
+  expect(getAuthDestination('?next=https://example.com')).toBe('/home')
   expect(getAuthDestination('?next=%2Fpreferiti')).toBe('/preferiti')
   expect(getAuthDestination('?next=%2Fconfronto%2F1091500')).toBe('/confronto/1091500')
-  expect(getAuthDestination('?next=%2Fconfronto%2F..%2Flogin')).toBe('/libreria')
-  expect(getAuthDestination('?next=%2Fconfronto%2F1%2Fextra')).toBe('/libreria')
+  expect(getAuthDestination('?next=%2Fconfronto%2F..%2Flogin')).toBe('/home')
+  expect(getAuthDestination('?next=%2Fconfronto%2F1%2Fextra')).toBe('/home')
   expect(
     validateAuthForm('register', {
       name: 'Test',
@@ -128,25 +155,23 @@ it('la pagina di recupero spiega il limite senza chiedere una email', async () =
   expect(screen.getByTestId('route').textContent).toBe('/login?next=%2Fconfigurazione')
 })
 
-it('si apre sulla Home, prima voce del menu, e la libreria mostra solo il catalogo', async () => {
+it('si apre sulla Home, che contiene il catalogo, prima voce del menu', async () => {
   renderRoute('/')
   await waitFor(() => expect(screen.getByTestId('route').textContent).toBe('/home'))
-  expect(
-    screen.getByRole('heading', { name: 'Scopri se il tuo PC è pronto per i tuoi giochi.' })
-  ).toBeTruthy()
+  screen.getByRole('heading', { level: 1, name: 'Scopri se il tuo PC è pronto per i tuoi giochi.' })
+  screen.getByRole('heading', { level: 2, name: 'Catalogo giochi' })
   const menu = screen.getByRole('navigation', { name: 'Pagine' })
   const links = within(menu).getAllByRole('link')
   expect(links[0].textContent).toBe('Home')
   expect(links[0].getAttribute('href')).toBe('/home')
-
-  fireEvent.click(within(menu).getByRole('link', { name: 'Esplora giochi' }))
-  await screen.findByRole('heading', { name: 'Catalogo giochi' })
-  expect(screen.queryByRole('heading', { name: /Scopri se il tuo PC/ })).toBeNull()
+  // The catalog no longer has its own page in the menu.
+  expect(within(menu).queryByRole('link', { name: 'Esplora giochi' })).toBeNull()
 })
 
-it('porta al catalogo dal pulsante della Home', async () => {
-  renderRoute('/home')
-  fireEvent.click(await screen.findByRole('link', { name: 'Esplora il catalogo' }))
-  await waitFor(() => expect(screen.getByTestId('route').textContent).toBe('/libreria'))
+it('porta i vecchi link della libreria sulla Home, con ricerca e filtri', async () => {
+  renderRoute('/libreria?q=Cyber&sort=alphabetical')
+  await waitFor(() =>
+    expect(screen.getByTestId('route').textContent).toBe('/home?q=Cyber&sort=alphabetical')
+  )
   await screen.findByRole('heading', { name: 'Catalogo giochi' })
 })

@@ -8,6 +8,7 @@ import type {
   SteamSearchResult,
   TopGame,
   TopGamesReply,
+  TopGenresReply,
 } from "../shared/types/steam";
 import { parseRequirements, sizeInGb } from "./requirements";
 
@@ -111,32 +112,73 @@ export async function getGameMinimumRequirements(appId: number): Promise<GameReq
   };
 }
 
-// GET /steam/games/top on the API: the most played games over the last 7 days.
-export async function getTopGames(): Promise<TopGamesReply> {
+// How many games the catalog shows from the chart, with or without a genre.
+const TOP_LIMIT = 12;
+
+// GET /steam/games/top on the API: the most played games over the last 7 days, optionally
+// only those of one genre.
+export async function getTopGames(genre?: string): Promise<TopGamesReply> {
   try {
-    const req = await fetch(apiUrl("/steam/games/top"), { signal: AbortSignal.timeout(30000) });
+    const query = `?limit=${TOP_LIMIT}` + (genre ? "&genre=" + encodeURIComponent(genre) : "");
+    // The first genre request may have to load the whole chart's details from Steam.
+    const req = await fetch(apiUrl("/steam/games/top" + query), { signal: AbortSignal.timeout(60000) });
     if (!req.ok) return { ok: false, message: "Classifica di Steam non disponibile." };
-    const rows: unknown = await req.json();
-    const text = (value: unknown, max: number): string | null =>
-      typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
-    const data: TopGame[] = [];
-    for (const row of Array.isArray(rows) ? rows.slice(0, 24) : []) {
-      const r = (row ?? {}) as Record<string, unknown>;
-      const name = text(r.name, 200);
-      const image = text(r.image, 500);
-      // Only Steam's own image servers, as the page's content security policy allows.
-      const safeImage = image && URL.canParse(image) && /^https:\/\/[a-z]+\.akamai\.steamstatic\.com\//.test(image);
-      if (!Number.isSafeInteger(r.appId) || (r.appId as number) <= 0 || !name || !safeImage) continue;
-      data.push({
-        appId: r.appId as number,
-        name,
-        description: text(r.description, 300) ?? "",
-        genres: (Array.isArray(r.genres) ? r.genres : []).filter((g): g is string => typeof g === "string").slice(0, 6),
-        image: image as string,
-      });
-    }
-    return { ok: true, data };
+    return { ok: true, data: toTopGames(await req.json(), TOP_LIMIT) };
   } catch {
     return { ok: false, message: "Classifica di Steam non raggiungibile. Controlla che l'API sia avviata." };
   }
+}
+
+// GET /steam/games/top/genres on the API: the charted games' genres, the most common first.
+export async function getTopGenres(): Promise<TopGenresReply> {
+  try {
+    const req = await fetch(apiUrl("/steam/games/top/genres"), { signal: AbortSignal.timeout(60000) });
+    if (!req.ok) return { ok: false, message: "Generi non disponibili." };
+    const rows: unknown = await req.json();
+    const data = (Array.isArray(rows) ? rows : [])
+      .map((row) => (row as { name?: unknown })?.name)
+      .filter((name): name is string => typeof name === "string" && !!name.trim() && name.length <= 50)
+      .slice(0, 40);
+    return { ok: true, data };
+  } catch {
+    return { ok: false, message: "Generi non disponibili." };
+  }
+}
+
+// GET /steam/games/details?ids= on the API: card data for the given games (the API caches
+// Steam's answers). Unknown games are left out.
+export async function getGamesDetails(appIds: number[]): Promise<TopGamesReply> {
+  if (!appIds.length) return { ok: true, data: [] };
+  try {
+    const req = await fetch(apiUrl("/steam/games/details?ids=" + appIds.join(",")), {
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!req.ok) return { ok: false, message: "Dettagli dei giochi non disponibili. Riprova." };
+    return { ok: true, data: toTopGames(await req.json(), appIds.length) };
+  } catch {
+    return { ok: false, message: "Servizio Steam non raggiungibile. Controlla che l'API sia avviata." };
+  }
+}
+
+// One game's card data from the API, or null when a field is missing or unsafe.
+function toTopGame(row: unknown): TopGame | null {
+  const r = (row ?? {}) as Record<string, unknown>;
+  const text = (value: unknown, max: number): string | null =>
+    typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
+  const name = text(r.name, 200);
+  const image = text(r.image, 500);
+  // Only Steam's own image servers, as the page's content security policy allows.
+  const safeImage = image && URL.canParse(image) && /^https:\/\/[a-z]+\.akamai\.steamstatic\.com\//.test(image);
+  if (!Number.isSafeInteger(r.appId) || (r.appId as number) <= 0 || !name || !safeImage) return null;
+  return {
+    appId: r.appId as number,
+    name,
+    description: text(r.description, 300) ?? "",
+    genres: (Array.isArray(r.genres) ? r.genres : []).filter((g): g is string => typeof g === "string").slice(0, 6),
+    image: image as string,
+  };
+}
+
+function toTopGames(rows: unknown, max: number): TopGame[] {
+  return (Array.isArray(rows) ? rows.slice(0, max) : []).map(toTopGame).filter((game) => game !== null);
 }

@@ -21,8 +21,8 @@ export function AuthPage({ mode }: { mode: AuthMode | 'recovery' }): JSX.Element
 
   return (
     <Box>
-      <Button component={Link} to="/libreria" color="inherit" sx={{ mb: 2 }}>
-        Torna alla libreria
+      <Button component={Link} to="/home" color="inherit" sx={{ mb: 2 }}>
+        Torna ai giochi
       </Button>
       <Paper variant="outlined" sx={{ maxWidth: 470, mx: 'auto', p: { xs: 2.5, sm: 3.5 } }}>
         {mode !== 'recovery' && (

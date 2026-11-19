@@ -16,7 +16,12 @@ export interface ComparisonRow {
   yours: string
   verdict: Verdict
   detail: string
+  // How your part compares with the required one, in percent: 100 = exactly the minimum,
+  // 250 = two and a half times it. Null when there is nothing to measure.
+  score: number | null
 }
+
+const percent = (yours: number, needed: number): number => Math.round((yours / needed) * 100)
 
 const LABELS: Record<RequirementKind, string> = {
   os: 'Sistema operativo',
@@ -36,27 +41,30 @@ function comparePart(
   yours: HardwarePart | null,
   scannedName: string,
   parts: HardwarePart[]
-): Pick<ComparisonRow, 'yours' | 'verdict' | 'detail'> {
+): Pick<ComparisonRow, 'yours' | 'verdict' | 'detail' | 'score'> {
   const shown = yours?.name ?? (scannedName || '—')
   const listed = matchRequirement(text, parts)
   if (!listed.length)
     return {
       yours: shown,
       verdict: 'check',
-      detail: 'Steam non indica un modello preciso: confronta a mano.'
+      detail: 'Steam non indica un modello preciso: confronta a mano.',
+      score: null
     }
   if (!yours)
     return {
       yours: shown,
       verdict: 'check',
-      detail: 'Il componente del tuo PC non è nell’elenco: confronta a mano.'
+      detail: 'Il componente del tuo PC non è nell’elenco: confronta a mano.',
+      score: null
     }
   const needed = listed.reduce((low, part) => (part.mark < low.mark ? part : low))
   const enough = yours.mark >= needed.mark
   return {
     yours: shown,
     verdict: enough ? 'ok' : 'low',
-    detail: `PassMark: ${marks(yours.mark)} contro ${marks(needed.mark)} (${needed.name}).`
+    detail: `PassMark: ${marks(yours.mark)} contro ${marks(needed.mark)} (${needed.name}).`,
+    score: percent(yours.mark, needed.mark)
   }
 }
 
@@ -64,12 +72,67 @@ function compareSize(
   neededGb: number | null,
   yoursGb: number | undefined,
   what: string
-): Pick<ComparisonRow, 'verdict' | 'detail'> {
+): Pick<ComparisonRow, 'verdict' | 'detail' | 'score'> {
   if (!neededGb || !yoursGb)
-    return { verdict: 'check', detail: `Steam o la scansione non indicano ${what}.` }
+    return { verdict: 'check', detail: `Steam o la scansione non indicano ${what}.`, score: null }
+  const score = percent(yoursGb, neededGb)
   return yoursGb >= neededGb
-    ? { verdict: 'ok', detail: `${yoursGb} GB contro ${neededGb} GB richiesti.` }
-    : { verdict: 'low', detail: `Mancano ${Math.ceil(neededGb - yoursGb)} GB.` }
+    ? { verdict: 'ok', detail: `${yoursGb} GB contro ${neededGb} GB richiesti.`, score }
+    : { verdict: 'low', detail: `Mancano ${Math.ceil(neededGb - yoursGb)} GB.`, score }
+}
+
+type OsFamily = 'windows' | 'macos' | 'linux'
+
+const OS_NAMES: Record<OsFamily, string> = { windows: 'Windows', macos: 'macOS', linux: 'Linux' }
+
+// The system a text names; Steam's PC requirements are Windows ones unless they say otherwise.
+function requiredFamily(text: string): OsFamily {
+  if (/\b(mac\s*os|os\s*x|macos)\b/i.test(text)) return 'macos'
+  if (/\b(linux|ubuntu|steam\s*os|debian|fedora)\b/i.test(text)) return 'linux'
+  return 'windows'
+}
+
+function pcFamily(os: ScannedPc['os']): OsFamily | null {
+  const name = `${os.platform} ${os.distro}`
+  // "darwin" contains "win", so macOS is tested first.
+  if (/darwin|mac/i.test(name)) return 'macos'
+  if (/win/i.test(name)) return 'windows'
+  if (/linux|ubuntu|steam\s*os|debian|fedora|arch/i.test(name)) return 'linux'
+  return null
+}
+
+// The Windows versions a text names, as numbers (XP = 5, Vista = 6, 8.1 = 8.1).
+function windowsVersions(text: string): number[] {
+  const after = text.slice(Math.max(0, text.search(/windows/i)))
+  const versions: number[] = []
+  for (const [, v] of after.matchAll(/\b(xp|vista|7|8\.1|8|10|11)\b/gi))
+    versions.push(v.toLowerCase() === 'xp' ? 5 : v.toLowerCase() === 'vista' ? 6 : Number(v))
+  return versions
+}
+
+// Same system: met. Windows 10 and 11 count as the same; a game that still lists an older
+// Windows has to be checked by hand, since it may not run on the current ones.
+function compareOs(text: string, os: ScannedPc['os']): Pick<ComparisonRow, 'verdict' | 'detail'> {
+  const needed = requiredFamily(text)
+  const yours = pcFamily(os)
+  if (!yours) return { verdict: 'check', detail: 'La scansione non indica il sistema operativo.' }
+  if (yours !== needed)
+    return {
+      verdict: 'low',
+      detail: `Il gioco richiede ${OS_NAMES[needed]}, il tuo PC usa ${OS_NAMES[yours]}.`
+    }
+  if (needed !== 'windows') return { verdict: 'ok', detail: `Entrambi ${OS_NAMES[needed]}.` }
+
+  const minimum = Math.min(...windowsVersions(text))
+  if (minimum < 10)
+    return {
+      verdict: 'check',
+      detail: 'Il gioco indica una versione di Windows precedente alla 10: verifica che funzioni.'
+    }
+  const pcVersions = windowsVersions(os.distro)
+  if (pcVersions.length && pcVersions[0] < 10)
+    return { verdict: 'low', detail: 'Il gioco richiede Windows 10 o successivo.' }
+  return { verdict: 'ok', detail: 'Windows 10 e 11 sono compatibili tra loro.' }
 }
 
 // Lines up a game's minimum requirements with this PC's scan, one row per requirement.
@@ -119,11 +182,11 @@ export function compareWithPc(
         return {
           ...base,
           yours: [pc.os.distro, pc.os.release].filter(Boolean).join(' ') || '—',
-          verdict: 'check',
-          detail: 'Controlla versione e architettura (64 bit).'
+          ...compareOs(row.value, pc.os),
+          score: null
         }
       default:
-        return { ...base, yours: '', verdict: 'info', detail: '' }
+        return { ...base, yours: '', verdict: 'info', detail: '', score: null }
     }
   })
 }
@@ -133,6 +196,15 @@ export function summarize(rows: ComparisonRow[]): Record<Verdict, number> {
   const totals: Record<Verdict, number> = { ok: 0, low: 0, check: 0, info: 0 }
   for (const row of rows) totals[row.verdict]++
   return totals
+}
+
+// The measured row with the lowest score: the part that limits the PC the most.
+export function weakestRow(rows: ComparisonRow[]): ComparisonRow | null {
+  let weakest: ComparisonRow | null = null
+  for (const row of rows)
+    if (row.score !== null && (weakest === null || row.score < (weakest.score ?? Infinity)))
+      weakest = row
+  return weakest
 }
 
 // What a finished comparison saves to the history (window.api.history.record).
