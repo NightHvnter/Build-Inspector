@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import type { JSX } from 'react'
 import type { Build } from '../../hooks/useBuild'
+import type { ManualFields } from '../../data/myBuild'
 import type { Result } from '../../services/result'
 import { Icon } from '../Icon'
 
@@ -21,6 +22,7 @@ const filterParts = createFilterOptions<string>({ limit: 50 })
 
 interface BuildFormProps {
   build: Build
+  manual: ManualFields
   cpus: string[]
   gpus: string[]
   ramOptions: number[]
@@ -34,17 +36,23 @@ interface BuildFormProps {
   onSave: () => void
 }
 
+// Under each part: whether a scan can still change it.
+const origin = (manual: boolean): string =>
+  manual ? 'Scelto a mano: le scansioni non lo cambiano' : 'Rilevato da questo PC'
+
 function PartField({
   label,
   value,
   options,
   loading,
+  helperText,
   onChange
 }: {
   label: string
   value: string
   options: string[]
   loading: boolean
+  helperText: string
   onChange: (value: string) => void
 }): JSX.Element {
   return (
@@ -62,6 +70,7 @@ function PartField({
           {...params}
           label={label}
           placeholder={loading ? 'Carico l’elenco…' : 'Cerca per nome'}
+          helperText={helperText}
         />
       )}
     />
@@ -70,6 +79,7 @@ function PartField({
 
 export function BuildForm({
   build,
+  manual,
   cpus,
   gpus,
   ramOptions,
@@ -114,6 +124,7 @@ export function BuildForm({
           value={build.cpuName}
           options={cpus}
           loading={loading}
+          helperText={origin(manual.cpuName)}
           onChange={(cpuName) => onChange({ cpuName })}
         />
         <PartField
@@ -121,12 +132,14 @@ export function BuildForm({
           value={build.gpuName}
           options={gpus}
           loading={loading}
+          helperText={origin(manual.gpuName)}
           onChange={(gpuName) => onChange({ gpuName })}
         />
         <TextField
           select
           label="RAM"
           value={build.ram}
+          helperText={origin(manual.ram)}
           onChange={(event) => onChange({ ram: Number(event.target.value) })}
         >
           {ramOptions.map((ram) => (
@@ -143,7 +156,8 @@ export function BuildForm({
         sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' } }}
       >
         <Typography variant="body2" color="text.secondary">
-          Salva prima di cambiare pagina. La configurazione viene conservata su questo dispositivo.
+          I confronti con i giochi usano questa configurazione. I componenti scelti a mano restano
+          fissi; gli altri seguono la scansione del PC. Salva prima di cambiare pagina.
         </Typography>
         <Button variant="contained" onClick={onSave} sx={{ flexShrink: 0 }}>
           Salva configurazione

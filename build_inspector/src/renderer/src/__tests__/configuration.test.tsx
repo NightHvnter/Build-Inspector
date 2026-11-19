@@ -60,7 +60,9 @@ it('fills the form from the scan with the names from the API', async () => {
   expect(value('CPU')).toBe('Intel Core i7-12700K')
   expect(value('GPU')).toBe('Radeon RX 7900 XT')
   expect(screen.getByRole('combobox', { name: 'RAM' }).textContent).toBe('32 GB')
-  expect(screen.getByText('Modifiche da salvare')).toBeTruthy()
+  // The scanned parts are already the ones in use: nothing to save, and every part follows the scan.
+  expect(screen.getByText('Nessuna modifica in sospeso')).toBeTruthy()
+  expect(screen.getAllByText('Rilevato da questo PC')).toHaveLength(3)
   expect(screen.queryByText('Prestazioni simulate')).toBeNull()
 })
 
@@ -95,4 +97,40 @@ it('shows the API error and asks again on retry', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Riprova' }))
   await screen.findByText(/Componenti bilanciati nel modello|Differenza tra i componenti/)
   expect(catalog).toHaveBeenCalledTimes(2)
+})
+
+it('keeps a part chosen by hand and follows the scan for the others', async () => {
+  localStorage.setItem(
+    'bi.build.u1',
+    JSON.stringify({
+      cpuName: 'AMD Ryzen 5 5600X',
+      gpuName: 'GeForce RTX 3060',
+      ram: 16,
+      manual: { cpuName: false, gpuName: true, ram: false }
+    })
+  )
+  render(<PostRegistrazione userId="u1" />)
+  await screen.findByText(/Componenti bilanciati nel modello|Differenza tra i componenti/)
+  // The processor and the memory weren't chosen by hand: they follow the scan.
+  expect(value('CPU')).toBe('Intel Core i7-12700K')
+  expect(screen.getByRole('combobox', { name: 'RAM' }).textContent).toBe('32 GB')
+  // The graphics card was: the scanned RX 7900 XT doesn't replace it.
+  expect(value('GPU')).toBe('GeForce RTX 3060')
+  screen.getByText('Scelto a mano: le scansioni non lo cambiano')
+})
+
+it('remembers a part picked by hand when saving', async () => {
+  render(<PostRegistrazione userId="u1" />)
+  await screen.findByText(/Componenti bilanciati nel modello|Differenza tra i componenti/)
+  fireEvent.mouseDown(screen.getByRole('combobox', { name: 'RAM' }))
+  fireEvent.click(await screen.findByRole('option', { name: '64 GB' }))
+  screen.getByText('Modifiche da salvare')
+  screen.getByText('Scelto a mano: le scansioni non lo cambiano')
+  fireEvent.click(screen.getByRole('button', { name: 'Salva configurazione' }))
+  expect(JSON.parse(localStorage.getItem('bi.build.u1')!)).toEqual({
+    cpuName: 'Intel Core i7-12700K',
+    gpuName: 'Radeon RX 7900 XT',
+    ram: 64,
+    manual: { cpuName: false, gpuName: false, ram: true }
+  })
 })

@@ -30,11 +30,16 @@ export function PostRegistrazione({ userId }: { userId: string }): JSX.Element {
     ram: detected.ram || 16
   }
 
-  const { build, saved, dirty, feedback, updateBuild, applyDetected, saveBuild } = useBuild(
+  const { build, manual, saved, dirty, feedback, updateBuild, applyDetected, saveBuild } = useBuild(
     userId,
     {
       isKnown: marks
-        ? (value) => marks.cpu.has(value.cpuName) && marks.gpu.has(value.gpuName)
+        ? (field, value) =>
+            field === 'cpuName'
+              ? marks.cpu.has(String(value))
+              : field === 'gpuName'
+                ? marks.gpu.has(String(value))
+                : true
         : null,
       detected: detectedBuild
     }
@@ -54,8 +59,8 @@ export function PostRegistrazione({ userId }: { userId: string }): JSX.Element {
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 3 }}>
         {saved
-          ? 'La tua configurazione salvata. Usa “Rileva dal mio PC” per ripartire dai componenti di questo computer.'
-          : 'I componenti sono rilevati da questo PC: controllali, correggili se serve e salva.'}
+          ? 'La configurazione usata nei confronti. Usa “Rileva dal mio PC” per tornare ai componenti di questo computer.'
+          : 'I componenti sono rilevati da questo PC: controllali, correggili se serve e salva. Quelli che scegli a mano non vengono più cambiati dalle scansioni.'}
       </Typography>
       {(hardware.loading || scan.scanning) && (
         <Stack spacing={0.5} sx={{ mb: 2 }} role="status">
@@ -101,6 +106,7 @@ export function PostRegistrazione({ userId }: { userId: string }): JSX.Element {
       )}
       <BuildForm
         build={build}
+        manual={manual}
         cpus={catalog?.cpus.map((part) => part.name) ?? []}
         gpus={catalog?.gpus.map((part) => part.name) ?? []}
         ramOptions={ramOptions(build.ram, detected?.ram ?? 0)}

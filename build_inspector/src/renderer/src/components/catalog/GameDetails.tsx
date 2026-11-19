@@ -19,11 +19,11 @@ import {
 } from '@mui/material'
 import type { JSX } from 'react'
 import { Link } from 'react-router-dom'
-import type { ScannedPc } from '@shared/types/scan'
 import type { RequirementKind } from '@shared/types/steam'
 import type { Game } from '../../games'
 import { useGameRequirements } from '../../hooks/useGameRequirements'
 import { usePcScan } from '../../hooks/usePcScan'
+import { useMyBuild } from '../../hooks/useMyBuild'
 import { useAuth } from '../../hooks/useAuth'
 import { authLink } from '../../utils/authNavigation'
 import { Icon } from '../Icon'
@@ -41,9 +41,9 @@ const LABELS: Record<RequirementKind, string> = {
 }
 
 // Only RAM can be checked reliably from Steam's text: CPU and GPU names need benchmarks.
-function ramVerdict(minimumGb: number | null, pc: ScannedPc | null): JSX.Element | null {
-  if (!minimumGb || !pc?.ram.totalGb) return null
-  const enough = pc.ram.totalGb >= minimumGb
+function ramVerdict(minimumGb: number | null, ramGb: number | null): JSX.Element | null {
+  if (!minimumGb || !ramGb) return null
+  const enough = ramGb >= minimumGb
   return (
     <Chip
       size="small"
@@ -57,6 +57,9 @@ function ramVerdict(minimumGb: number | null, pc: ScannedPc | null): JSX.Element
 function RequirementsSection({ game }: { game: Game }): JSX.Element {
   const steam = useGameRequirements(game.id)
   const scan = usePcScan(true)
+  // Memory chosen by hand in "La mia build" wins over the scanned amount.
+  const myBuild = useMyBuild(scan.pc, null)
+  const ramGb = myBuild?.manual.ram ? myBuild.ram : (scan.pc?.ram.totalGb ?? null)
   const rows = steam.requirements?.minimum ?? []
   const minimumRamGb = steam.requirements?.ramGb ?? null
 
@@ -120,7 +123,7 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
                 </TableCell>
                 <TableCell>
                   {row.value}
-                  {row.kind === 'ram' && ramVerdict(minimumRamGb, scan.pc)}
+                  {row.kind === 'ram' && ramVerdict(minimumRamGb, ramGb)}
                 </TableCell>
               </TableRow>
             ))}

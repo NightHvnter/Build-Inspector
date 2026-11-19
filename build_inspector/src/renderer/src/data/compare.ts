@@ -4,6 +4,7 @@ import type { GameRequirements, RequirementKind } from '@shared/types/steam'
 import { sizeInGb } from '@shared/units'
 import type { HistoryRecord } from '../../../shared/history'
 import { detectBuild, matchRequirement } from './hardware'
+import type { MyBuild } from './myBuild'
 
 // ok: the PC meets it; low: it doesn't; check: it can't be decided from the data;
 // info: nothing on the PC to compare (DirectX, notes).
@@ -19,6 +20,11 @@ export interface ComparisonRow {
   // How your part compares with the required one, in percent: 100 = exactly the minimum,
   // 250 = two and a half times it. Null when there is nothing to measure.
   score: number | null
+  // PassMark scores behind a processor or graphics card row, for the upgrade advice.
+  yourMark?: number
+  neededMark?: number
+  // True when "yours" is a part chosen by hand in "La mia build", not the scanned one.
+  manual?: boolean
 }
 
 const percent = (yours: number, needed: number): number => Math.round((yours / needed) * 100)
@@ -41,7 +47,7 @@ function comparePart(
   yours: HardwarePart | null,
   scannedName: string,
   parts: HardwarePart[]
-): Pick<ComparisonRow, 'yours' | 'verdict' | 'detail' | 'score'> {
+): Pick<ComparisonRow, 'yours' | 'verdict' | 'detail' | 'score' | 'yourMark' | 'neededMark'> {
   const shown = yours?.name ?? (scannedName || '—')
   const listed = matchRequirement(text, parts)
   if (!listed.length)
@@ -64,7 +70,9 @@ function comparePart(
     yours: shown,
     verdict: enough ? 'ok' : 'low',
     detail: `PassMark: ${marks(yours.mark)} contro ${marks(needed.mark)} (${needed.name}).`,
-    score: percent(yours.mark, needed.mark)
+    score: percent(yours.mark, needed.mark),
+    yourMark: yours.mark,
+    neededMark: needed.mark
   }
 }
 
@@ -139,12 +147,19 @@ function compareOs(text: string, os: ScannedPc['os']): Pick<ComparisonRow, 'verd
 export function compareWithPc(
   requirements: GameRequirements,
   pc: ScannedPc,
-  catalog: HardwareCatalog | null
+  catalog: HardwareCatalog | null,
+  // "La mia build": processor, graphics card and memory to use instead of the scanned ones.
+  build: MyBuild | null = null
 ): ComparisonRow[] {
   const detected = catalog ? detectBuild(pc, catalog) : null
-  const yourCpu = (catalog && catalog.cpus.find((p) => p.name === detected?.cpuName)) || null
-  const yourGpu = (catalog && catalog.gpus.find((p) => p.name === detected?.gpuName)) || null
-  const vramGb = Math.max(0, ...pc.gpus.map((gpu) => gpu.vramMb)) / 1024
+  const cpuName = build?.cpuName || detected?.cpuName
+  const gpuName = build?.gpuName || detected?.gpuName
+  const ramGb = build?.ram || pc.ram.totalGb
+  const yourCpu = (catalog && catalog.cpus.find((p) => p.name === cpuName)) || null
+  const yourGpu = (catalog && catalog.gpus.find((p) => p.name === gpuName)) || null
+  // The scanned video memory belongs to the scanned card, not to one chosen by hand.
+  const vramGb = build?.manual.gpuName ? 0 : Math.max(0, ...pc.gpus.map((gpu) => gpu.vramMb)) / 1024
+  const manual = build?.manual
 
   return requirements.minimum.map((row) => {
     const base = { kind: row.kind, label: row.label || LABELS[row.kind], required: row.value }
@@ -152,7 +167,8 @@ export function compareWithPc(
       case 'cpu':
         return {
           ...base,
-          ...comparePart(row.value, yourCpu, pc.cpu.name, catalog?.cpus ?? [])
+          ...comparePart(row.value, yourCpu, pc.cpu.name, catalog?.cpus ?? []),
+          manual: !!manual?.cpuName
         }
       case 'gpu': {
         const result = comparePart(row.value, yourGpu, pc.gpus[0]?.name ?? '', catalog?.gpus ?? [])
@@ -164,13 +180,14 @@ export function compareWithPc(
             yours: result.yours,
             ...compareSize(neededVram, Math.round(vramGb), 'la memoria video')
           }
-        return { ...base, ...result }
+        return { ...base, ...result, manual: !!manual?.gpuName }
       }
       case 'ram':
         return {
           ...base,
-          yours: pc.ram.totalGb ? pc.ram.totalGb + ' GB' : '—',
-          ...compareSize(requirements.ramGb, pc.ram.totalGb, 'la RAM')
+          yours: ramGb ? ramGb + ' GB' : '—',
+          ...compareSize(requirements.ramGb, ramGb, 'la RAM'),
+          manual: !!manual?.ram
         }
       case 'storage':
         return {
@@ -212,16 +229,17 @@ export function historyRecord(
   requirements: GameRequirements,
   pc: ScannedPc,
   catalog: HardwareCatalog | null,
-  rows: ComparisonRow[]
+  rows: ComparisonRow[],
+  build: MyBuild | null = null
 ): HistoryRecord {
   const detected = catalog ? detectBuild(pc, catalog) : null
   const totals = summarize(rows)
   return {
     appId: requirements.appId,
     gameName: (requirements.name || 'Gioco ' + requirements.appId).slice(0, 255),
-    cpuName: detected?.cpuName || null,
-    gpuName: detected?.gpuName || null,
-    ramGb: pc.ram.totalGb || null,
+    cpuName: build?.cpuName || detected?.cpuName || null,
+    gpuName: build?.gpuName || detected?.gpuName || null,
+    ramGb: build?.ram || pc.ram.totalGb || null,
     met: totals.ok,
     failed: totals.low,
     toCheck: totals.check
