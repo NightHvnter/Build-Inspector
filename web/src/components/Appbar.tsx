@@ -1,84 +1,83 @@
 import ContrastIcon from "@mui/icons-material/Contrast";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import MemoryIcon from "@mui/icons-material/Memory";
 
 import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
+import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../hooks";
-import { useUser } from "../hooks/useUser";
-import AuthModal from "./AuthModal";
+import { REPO_URL } from "../downloads";
+
+const LINKS = [
+  { to: "/explore", label: "Funzionalità" },
+  { to: "/download", label: "Download" },
+  { to: "/about-us", label: "Chi siamo" },
+];
 
 export default function Appbar() {
   const theme = useTheme();
-  const nativigate = useNavigate();
+  const navigate = useNavigate();
 
   return (
-    <>
-      <AppBar position="static" color="primary" elevation={6}>
-        <Toolbar>
-          <Stack direction={"row"} sx={{ gap: 1 }}>
-            <Tooltip title="Home" enterNextDelay={1000} arrow>
-              <IconButton
-                onClick={() => {
-                  nativigate("/");
-                }}
-              >
-                <MemoryIcon fontSize="large" sx={{ color: "white" }} />
-              </IconButton>
-            </Tooltip>
+    <AppBar position="static" color="primary" elevation={6}>
+      <Toolbar sx={{ gap: { xs: 0, sm: 1 }, px: { xs: 0.5, sm: 2 } }}>
+        <Tooltip title="Home" enterNextDelay={1000} arrow>
+          <IconButton onClick={() => navigate("/")} aria-label="Home" sx={{ color: "white" }}>
+            <MemoryIcon fontSize="large" />
+          </IconButton>
+        </Tooltip>
+        <Typography
+          component="span"
+          sx={{ fontWeight: 700, color: "white", mr: 2, display: { xs: "none", md: "block" } }}
+        >
+          Build Inspector
+        </Typography>
+        <Stack direction="row" component="nav" aria-label="Pagine" sx={{ gap: 0.5 }}>
+          {LINKS.map((link) => (
             <Button
-              color="primary"
-              variant="contained"
-              onClick={() => {
-                nativigate("/explore");
+              key={link.to}
+              component={NavLink}
+              to={link.to}
+              sx={{
+                color: "white",
+                minWidth: 0,
+                whiteSpace: "nowrap",
+                px: { xs: 0.75, sm: 1 },
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                "&.active": { bgcolor: "rgba(255,255,255,0.16)" },
               }}
             >
-              Explore
+              {link.label}
             </Button>
-            <Button color="primary" variant="contained">
-              Download
-            </Button>
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={() => {
-                nativigate("/about-us");
-              }}
-            >
-              About Us
-            </Button>
-          </Stack>
+          ))}
+        </Stack>
 
-          <Box sx={{ flexGrow: 1 }}></Box>
+        <Box sx={{ flexGrow: 1 }} />
 
-          <Tooltip title="Account" enterNextDelay={1000} arrow>
-            <IconButton>
-              <AccountCircleIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Change theme" enterNextDelay={1000} arrow>
-            <IconButton
-              aria-label="toggle theme"
-              onClick={theme.toggleColorMode}
-            >
-              <ContrastIcon
-                sx={{
-                  transform:
-                    theme.mode == "light" ? "rotate(0turn)" : "rotate(0.5turn)",
-                }}
-              />
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
-      </AppBar>
-    </>
+        <Tooltip title="GitHub" enterNextDelay={1000} arrow>
+          <IconButton href={REPO_URL} aria-label="Codice su GitHub" sx={{ color: "white" }}>
+            <GitHubIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Cambia tema" enterNextDelay={1000} arrow>
+          <IconButton
+            aria-label="Cambia tema"
+            onClick={theme.toggleColorMode}
+            sx={{ color: "white" }}
+          >
+            <ContrastIcon
+              sx={{ transform: theme.mode === "light" ? "rotate(0turn)" : "rotate(0.5turn)" }}
+            />
+          </IconButton>
+        </Tooltip>
+      </Toolbar>
+    </AppBar>
   );
 }

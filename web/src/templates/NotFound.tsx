@@ -1,9 +1,9 @@
 import { Box, Button, Stack, Typography } from "@mui/material";
-import { useTheme } from "../hooks";
+
 import { useNavigate } from "react-router-dom";
 
 export default function NotFound() {
-  const theme = useTheme()
+
   const navigate = useNavigate()
 
   return (
