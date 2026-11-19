@@ -1,6 +1,5 @@
 import ContrastIcon from "@mui/icons-material/Contrast";
 import GitHubIcon from "@mui/icons-material/GitHub";
-import MemoryIcon from "@mui/icons-material/Memory";
 
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -29,8 +28,14 @@ export default function Appbar() {
     <AppBar position="static" color="primary" elevation={6}>
       <Toolbar sx={{ gap: { xs: 0, sm: 1 }, px: { xs: 0.5, sm: 2 } }}>
         <Tooltip title="Home" enterNextDelay={1000} arrow>
-          <IconButton onClick={() => navigate("/")} aria-label="Home" sx={{ color: "white" }}>
-            <MemoryIcon fontSize="large" />
+          <IconButton onClick={() => navigate("/")} aria-label="Home" sx={{ p: 0.75 }}>
+            {/* The app's own logo (public/favicon.svg, the same as build_inspector/build/logo.svg). */}
+            <Box
+              component="img"
+              src={`${import.meta.env.BASE_URL}favicon.svg`}
+              alt=""
+              sx={{ width: 40, height: 40, display: "block" }}
+            />
           </IconButton>
         </Tooltip>
         <Typography
