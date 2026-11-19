@@ -22,8 +22,6 @@ import { Link } from 'react-router-dom'
 import type { RequirementKind } from '@shared/types/steam'
 import type { Game } from '../../games'
 import { useGameRequirements } from '../../hooks/useGameRequirements'
-import { usePcScan } from '../../hooks/usePcScan'
-import { useMyBuild } from '../../hooks/useMyBuild'
 import { useAuth } from '../../hooks/useAuth'
 import { authLink } from '../../utils/authNavigation'
 import { Icon } from '../Icon'
@@ -40,55 +38,20 @@ const LABELS: Record<RequirementKind, string> = {
   other: 'Note'
 }
 
-// Only RAM can be checked reliably from Steam's text: CPU and GPU names need benchmarks.
-function ramVerdict(minimumGb: number | null, ramGb: number | null): JSX.Element | null {
-  if (!minimumGb || !ramGb) return null
-  const enough = ramGb >= minimumGb
-  return (
-    <Chip
-      size="small"
-      color={enough ? 'success' : 'error'}
-      label={enough ? 'Sufficiente' : 'Insufficiente'}
-      sx={{ ml: 1 }}
-    />
-  )
-}
-
 function RequirementsSection({ game }: { game: Game }): JSX.Element {
   const steam = useGameRequirements(game.id)
-  const scan = usePcScan(true)
-  // Memory chosen by hand in "La mia build" wins over the scanned amount.
-  const myBuild = useMyBuild(scan.pc, null)
-  const ramGb = myBuild?.manual.ram ? myBuild.ram : (scan.pc?.ram.totalGb ?? null)
   const rows = steam.requirements?.minimum ?? []
-  const minimumRamGb = steam.requirements?.ramGb ?? null
 
   return (
     <>
-      <Stack
-        direction="row"
-        sx={{ mt: 3, mb: 1, alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
-      >
-        <Typography variant="h6">Requisiti minimi</Typography>
-        <Button
-          size="small"
-          onClick={scan.rescan}
-          disabled={scan.scanning || !window.api?.scanner}
-          startIcon={<Icon name="chip" size={16} />}
-        >
-          Scansiona di nuovo
-        </Button>
-      </Stack>
-      {(steam.loading || scan.scanning) && (
+      <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>
+        Requisiti minimi
+      </Typography>
+      {steam.loading && (
         <Stack spacing={0.5} sx={{ mb: 1 }} role="status">
           <LinearProgress aria-label="Caricamento" />
           <Typography variant="caption" color="text.secondary">
-            {[
-              steam.loading && 'Carico i requisiti da Steam…',
-              scan.scanning && 'Scansiono il tuo PC…'
-            ]
-              .filter(Boolean)
-              .join(' ')}
+            Carico i requisiti da Steam…
           </Typography>
         </Stack>
       )}
@@ -100,11 +63,6 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
       {!steam.loading && !steam.error && rows.length === 0 && (
         <Alert severity="info" sx={{ mb: 1 }}>
           Steam non indica requisiti minimi per questo gioco.
-        </Alert>
-      )}
-      {scan.error && (
-        <Alert severity="error" sx={{ mb: 1 }}>
-          {scan.error}
         </Alert>
       )}
       {rows.length > 0 && (
@@ -121,17 +79,14 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
                 <TableCell component="th" scope="row" sx={{ whiteSpace: 'nowrap' }}>
                   {row.label || LABELS[row.kind]}
                 </TableCell>
-                <TableCell>
-                  {row.value}
-                  {row.kind === 'ram' && ramVerdict(minimumRamGb, ramGb)}
-                </TableCell>
+                <TableCell>{row.value}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-        Requisiti da Steam. La RAM è confrontata con la scansione del tuo PC.
+        Requisiti da Steam. Con “Confronta con il mio PC” vedi come se la cava il tuo computer.
       </Typography>
     </>
   )

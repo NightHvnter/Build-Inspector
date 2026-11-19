@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ScannedPc } from '@shared/types/scan'
@@ -78,7 +78,7 @@ it('asks guests to log in before comparing with their PC', () => {
   expect(member.getAttribute('href')).toBe('/confronto/1091500')
 })
 
-it('shows the minimum requirements from Steam and checks RAM against the scan', async () => {
+it('shows the minimum requirements from Steam, without checking the PC', async () => {
   requirements.mockResolvedValue({
     ok: true,
     data: {
@@ -97,23 +97,18 @@ it('shows the minimum requirements from Steam and checks RAM against the scan', 
 
   const table = await screen.findByRole('table', { name: /requisiti minimi/i })
   expect(requirements).toHaveBeenCalledWith(1091500)
-  expect(scan).toHaveBeenCalledTimes(1)
   const cpu = within(table).getByRole('row', { name: /processore/i })
   expect(cpu.textContent).toContain('Core i7-6700 or Ryzen 5 1600')
   const ram = within(table).getByRole('row', { name: /memoria/i })
-  await within(ram).findByText('Insufficiente')
-  // The scan is used only for the RAM check: the PC's own specs are not shown.
-  expect(table.textContent).not.toMatch(/Ryzen 5 5600X|RTX 3060|Windows 11/)
-  expect(within(table).queryByText('Il tuo PC')).toBeNull()
+  expect(ram.textContent).toBe('Memoria12 GB di RAM')
+  // No "Sufficiente"/"Insufficiente" chip, and no scan: the comparison page does that.
+  expect(screen.queryByText(/^(In)?sufficiente$/)).toBeNull()
+  expect(screen.queryByRole('button', { name: /scansiona di nuovo/i })).toBeNull()
+  expect(scan).not.toHaveBeenCalled()
 })
 
-it('keeps the scan when Steam fails and scans again on request', async () => {
+it('explains when Steam has no requirements', async () => {
   requirements.mockResolvedValue({ ok: false, message: 'Gioco non trovato su Steam.' })
-  scan.mockResolvedValue(PC)
   open()
-  await screen.findByText(/Gioco non trovato su Steam\./)
-  const again = screen.getByRole('button', { name: /scansiona di nuovo/i })
-  await vi.waitFor(() => expect((again as HTMLButtonElement).disabled).toBe(false))
-  fireEvent.click(again)
-  await vi.waitFor(() => expect(scan).toHaveBeenCalledTimes(2))
+  await screen.findByText(/Gioco non trovato su Steam./)
 })
