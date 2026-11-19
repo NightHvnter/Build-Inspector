@@ -1,37 +1,31 @@
 import { useState } from 'react'
-import { readPreference, savePreference } from '../services/preferences'
+import { savePreference } from '../services/preferences'
 import type { Result } from '../services/result'
+import {
+  NO_MANUAL,
+  buildKey,
+  effectiveBuild,
+  readSavedBuild,
+  type BuildValues,
+  type IsKnown,
+  type ManualFields,
+  type SavedBuild
+} from '../data/myBuild'
 
-export interface Build {
-  cpuName: string
-  gpuName: string
-  ram: number
-}
+export type Build = BuildValues
 const EMPTY_BUILD: Build = { cpuName: '', gpuName: '', ram: 16 }
 
-function isBuild(value: unknown): value is Build {
-  if (!value || typeof value !== 'object') return false
-  const build = value as Partial<Build>
-  return (
-    typeof build.cpuName === 'string' &&
-    !!build.cpuName &&
-    typeof build.gpuName === 'string' &&
-    !!build.gpuName &&
-    typeof build.ram === 'number' &&
-    Number.isSafeInteger(build.ram) &&
-    build.ram > 0
-  )
-}
-
 interface BuildOptions {
-  // Whether a saved build still names parts the API knows; null while the list loads.
-  isKnown: ((build: Build) => boolean) | null
-  // The values found by scanning this PC, used until the user saves a build.
+  // Whether a saved part is still in the API's list; null while the list loads.
+  isKnown: IsKnown | null
+  // The values found by scanning this PC: the default for every part not chosen by hand.
   detected: Build | null
 }
 
 interface BuildState {
   build: Build
+  // Which parts were chosen by hand (and so are never replaced by a scan).
+  manual: ManualFields
   saved: boolean
   dirty: boolean
   feedback: Result<Build> | null
@@ -40,49 +34,69 @@ interface BuildState {
   saveBuild: () => void
 }
 
+const sameBuild = (a: SavedBuild, b: SavedBuild): boolean =>
+  JSON.stringify([a.cpuName, a.gpuName, a.ram, a.manual]) ===
+  JSON.stringify([b.cpuName, b.gpuName, b.ram, b.manual])
+
 export function useBuild(userId: string, { isKnown, detected }: BuildOptions): BuildState {
-  const key = 'bi.build.' + userId
-  const [savedBuild, setSavedBuild] = useState<Build | null>(() =>
-    readPreference<Build | null>(key, null, (value): value is Build | null => isBuild(value))
-  )
-  // What the user changed on this visit; until then the form shows the saved build or the scan.
-  const [edited, setEdited] = useState<Build | null>(null)
+  const key = buildKey(userId)
+  const [savedBuild, setSavedBuild] = useState<SavedBuild | null>(() => readSavedBuild(userId))
+  // What the user changed on this visit; until then the form shows the build in use.
+  const [edited, setEdited] = useState<SavedBuild | null>(null)
   const [feedback, setFeedback] = useState<Result<Build> | null>(null)
 
-  // A build saved with the old built-in list may name parts the API doesn't have.
-  const usableSaved = savedBuild && (!isKnown || isKnown(savedBuild)) ? savedBuild : null
-  const build = edited ?? usableSaved ?? detected ?? EMPTY_BUILD
+  // Parts chosen by hand stay; the rest follow the scan (see data/myBuild.ts).
+  const inUse = effectiveBuild(savedBuild, detected, isKnown ?? undefined) ?? {
+    ...EMPTY_BUILD,
+    manual: NO_MANUAL
+  }
+  const current = edited ?? inUse
+  const build: Build = {
+    cpuName: current.cpuName,
+    gpuName: current.gpuName,
+    ram: current.ram || EMPTY_BUILD.ram
+  }
 
+  // A part the user picks becomes "manual": later scans won't replace it.
   const updateBuild = (value: Partial<Build>): void => {
-    setEdited({ ...build, ...value })
+    const manual = { ...current.manual }
+    for (const field of Object.keys(value) as (keyof Build)[]) manual[field] = true
+    setEdited({ ...build, ...value, manual })
     setFeedback(null)
   }
-  // Fills the form from the scan, keeping the current choice for a part the scan couldn't match.
+  // Back to the scan: every part the scan recognised follows it again.
   const applyDetected = (): void => {
     if (!detected) return
     setEdited({
       cpuName: detected.cpuName || build.cpuName,
       gpuName: detected.gpuName || build.gpuName,
-      ram: detected.ram || build.ram
+      ram: detected.ram || build.ram,
+      manual: {
+        cpuName: !detected.cpuName && current.manual.cpuName,
+        gpuName: !detected.gpuName && current.manual.gpuName,
+        ram: !detected.ram && current.manual.ram
+      }
     })
     setFeedback(null)
   }
   const saveBuild = (): void => {
-    if (!isBuild(build)) {
+    if (!build.cpuName || !build.gpuName) {
       setFeedback({ ok: false, message: 'Scegli CPU e GPU prima di salvare.' })
       return
     }
-    const result = savePreference(key, build)
-    setFeedback(result)
+    const next: SavedBuild = { ...build, manual: current.manual }
+    const result = savePreference(key, next)
+    setFeedback(result.ok ? { ok: true, data: build } : result)
     if (result.ok) {
-      setSavedBuild(build)
+      setSavedBuild(next)
       setEdited(null)
     }
   }
   return {
     build,
-    saved: !!usableSaved,
-    dirty: JSON.stringify(build) !== JSON.stringify(usableSaved ?? EMPTY_BUILD),
+    manual: current.manual,
+    saved: !!savedBuild,
+    dirty: edited !== null && !sameBuild(edited, inUse),
     feedback,
     updateBuild,
     applyDetected,

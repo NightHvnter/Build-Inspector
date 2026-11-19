@@ -30,8 +30,11 @@ import {
 import { useGameRequirements } from './hooks/useGameRequirements'
 import { useHardwareCatalog } from './hooks/useHardwareCatalog'
 import { usePcScan } from './hooks/usePcScan'
+import { useMyBuild } from './hooks/useMyBuild'
 import { steamCover } from './hooks/useSteamSearch'
 import { Icon } from './components/Icon'
+import { UpgradeAdvice } from './components/compare/UpgradeAdvice'
+import { suggestUpgrades } from './data/upgrades'
 
 type Tone = 'success' | 'error' | 'warning'
 
@@ -83,12 +86,25 @@ export function CompareGame(): JSX.Element {
   const scan = usePcScan(appId !== null)
   const hardware = useHardwareCatalog()
   const requirements = steam.requirements
+  // "La mia build": parts chosen by hand stay as saved, the others come from the scan.
+  const myBuild = useMyBuild(scan.pc, hardware.catalog)
   const rows = useMemo(
-    () => (requirements && scan.pc ? compareWithPc(requirements, scan.pc, hardware.catalog) : []),
-    [requirements, scan.pc, hardware.catalog]
+    () =>
+      requirements && scan.pc
+        ? compareWithPc(requirements, scan.pc, hardware.catalog, myBuild)
+        : [],
+    [requirements, scan.pc, hardware.catalog, myBuild]
   )
   const totals = summarize(rows)
   const weakest = weakestRow(rows)
+  // What to change, and with which parts, for every component that isn't green.
+  const upgrades = useMemo(
+    () =>
+      requirements && scan.pc
+        ? suggestUpgrades(rows, requirements, scan.pc, hardware.catalog, myBuild)
+        : [],
+    [rows, requirements, scan.pc, hardware.catalog, myBuild]
+  )
   const loading = steam.loading || scan.scanning || hardware.loading
 
   // Save each finished comparison once (a new scan counts as a new one). The API merges
@@ -104,10 +120,10 @@ export function CompareGame(): JSX.Element {
     if (recorded.current === key) return
     recorded.current = key
     history
-      .record(historyRecord(requirements, pc, catalog, rows))
+      .record(historyRecord(requirements, pc, catalog, rows, myBuild))
       .then((reply) => setHistoryError(reply.ok ? null : reply.message))
       .catch(() => setHistoryError('Cronologia non disponibile.'))
-  }, [loading, requirements, pc, catalog, rows])
+  }, [loading, requirements, pc, catalog, rows, myBuild])
 
   if (appId === null)
     return (
@@ -298,6 +314,20 @@ export function CompareGame(): JSX.Element {
             </Box>
             <MeterLegend />
           </Stack>
+          {rows.some((row) => row.manual) && (
+            <Alert
+              severity="info"
+              sx={{ mb: 1.5 }}
+              action={
+                <Button component={Link} to="/configurazione" color="inherit" size="small">
+                  La mia build
+                </Button>
+              }
+            >
+              Alcuni componenti vengono da “La mia build”, dove li hai scelti a mano: la scansione
+              non li sostituisce.
+            </Alert>
+          )}
           <TableContainer component={Paper} variant="outlined">
             <Table aria-label="Requisiti minimi e componenti del tuo PC" sx={{ minWidth: 860 }}>
               <TableHead>
@@ -329,6 +359,8 @@ export function CompareGame(): JSX.Element {
           </TableContainer>
         </>
       )}
+
+      {!loading && <UpgradeAdvice upgrades={upgrades} />}
 
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
         Processore e scheda video sono confrontati con i punteggi PassMark del database; memoria,
@@ -378,6 +410,9 @@ function ComparisonTableRow({ row }: { row: ComparisonRow }): JSX.Element {
         <Typography variant="body2" sx={{ fontWeight: 500 }}>
           {row.yours}
         </Typography>
+        {row.manual && (
+          <Chip size="small" variant="outlined" label="Scelto a mano" sx={{ mt: 0.5 }} />
+        )}
       </TableCell>
       <TableCell>
         {row.score !== null ? (

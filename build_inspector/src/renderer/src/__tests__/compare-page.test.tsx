@@ -5,6 +5,7 @@ import type { ScannedPc } from '@shared/types/scan'
 import { CompareGame } from '../compare'
 import { resetHardwareCatalogCache } from '../hooks/useHardwareCatalog'
 import { resetPcScanCache } from '../hooks/usePcScan'
+import { AuthContext } from '../contexts/AuthContext'
 
 const requirements = vi.fn()
 const scan = vi.fn()
@@ -132,4 +133,68 @@ it('says so when the comparison could not be saved', async () => {
   record.mockResolvedValue({ ok: false, message: 'La sessione è scaduta. Accedi di nuovo.' })
   open('/confronto/1091500')
   await screen.findByText(/Confronto non salvato nella cronologia: La sessione è scaduta/)
+})
+
+it('says what to upgrade, and with what, when a component is not enough', async () => {
+  requirements.mockResolvedValue({
+    ok: true,
+    data: {
+      appId: 1091500,
+      name: 'Cyberpunk 2077',
+      minimum: [{ kind: 'ram', label: 'Memoria', value: '64 GB di RAM' }],
+      ramGb: 64,
+      storageGb: null
+    }
+  })
+  open('/confronto/1091500')
+  const advice = await screen.findByRole('region', { name: 'Come migliorare il tuo PC' })
+  within(advice).getByRole('heading', { name: 'Memoria' })
+  within(advice).getByText('Necessario')
+  within(advice).getByText('Hai 32 GB di memoria, il gioco ne chiede 64.')
+  within(advice).getByText(/^Porta la memoria a 64 GB: per esempio un kit 2 × 32 GB/)
+})
+
+it('gives no advice when every component has a good margin', async () => {
+  open('/confronto/1091500')
+  await screen.findByText('Il tuo PC raggiunge i requisiti minimi')
+  expect(screen.queryByRole('region', { name: 'Come migliorare il tuo PC' })).toBeNull()
+})
+
+it('compares with the parts chosen by hand in "La mia build"', async () => {
+  localStorage.setItem(
+    'bi.build.u1',
+    JSON.stringify({
+      cpuName: 'Intel Core i7-12700K',
+      gpuName: 'Radeon RX 7900 XT',
+      ram: 8,
+      manual: { cpuName: false, gpuName: false, ram: true }
+    })
+  )
+  render(
+    <AuthContext.Provider
+      value={
+        {
+          user: { id: 'u1', name: 'Test', email: 'test@example.com' },
+          initializing: false,
+          configured: true
+        } as never
+      }
+    >
+      <MemoryRouter initialEntries={['/confronto/1091500']}>
+        <Routes>
+          <Route path="/confronto/:appId" element={<CompareGame />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>
+  )
+  await screen.findByText('Il tuo PC non raggiunge i requisiti minimi')
+  const table = screen.getByRole('table', { name: /requisiti minimi e componenti/i })
+  // The scan finds 32 GB, but the user set 8 GB by hand: 8 GB is compared.
+  const ram = within(table).getByRole('row', { name: /memoria/i })
+  expect(ram.textContent).toContain('8 GB')
+  within(ram).getByText('Scelto a mano')
+  within(ram).getByText('Insufficiente')
+  screen.getByText(/Alcuni componenti vengono da “La mia build”/)
+  await waitFor(() => expect(record).toHaveBeenCalledWith(expect.objectContaining({ ramGb: 8 })))
+  localStorage.clear()
 })
