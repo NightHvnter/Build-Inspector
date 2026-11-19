@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Inspector · Documentazione</title>
+<style>
+:root{
+  --bg:#f7f7f5; --surface:#ffffff; --surface2:#f0efeb; --text:#1d1d1b; --muted:#5f5e58;
+  --border:#dedcd5; --accent:#2b5fd9; --accent-soft:#e6edfc; --ok:#1f8a4c; --warn:#b26a00; --err:#c0392b;
+  --code-bg:#f2f1ed; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141413; --surface:#1d1d1b; --surface2:#262623; --text:#ecebe6; --muted:#a3a198;
+    --border:#34332f; --accent:#7ea2ff; --accent-soft:#1f2a47; --ok:#4cc985; --warn:#f0a646; --err:#ff7a6b;
+    --code-bg:#23231f;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141413; --surface:#1d1d1b; --surface2:#262623; --text:#ecebe6; --muted:#a3a198;
+  --border:#34332f; --accent:#7ea2ff; --accent-soft:#1f2a47; --ok:#4cc985; --warn:#f0a646; --err:#ff7a6b;
+  --code-bg:#23231f;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 16px;border-right:1px solid var(--border)}
+nav.toc h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+nav.toc a{display:block;color:var(--text);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:14px}
+nav.toc a:hover{background:var(--surface2)}
+nav.toc a.sub{padding-left:22px;color:var(--muted);font-size:13px}
+main{padding:32px 40px 80px;min-width:0}
+h1{font-size:34px;line-height:1.2;margin:0 0 8px}
+h2{font-size:26px;margin:56px 0 12px;padding-top:12px;border-top:1px solid var(--border)}
+h3{font-size:19px;margin:32px 0 8px}
+h4{font-size:16px;margin:20px 0 6px}
+p{margin:8px 0 12px}
+.lead{font-size:18px;color:var(--muted);max-width:70ch}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+pre code{background:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:14.5px}
+.tw{overflow-x:auto}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--surface2);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0}
+.grid .card{margin:0}
+.card h4{margin-top:0}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-right:4px}
+.note{border-left:4px solid var(--warn);background:var(--surface);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+.tip{border-left:4px solid var(--accent);background:var(--surface);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+.ok{color:var(--ok);font-weight:600}.low{color:var(--err);font-weight:600}.check{color:var(--warn);font-weight:600}.info{color:var(--muted);font-weight:600}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:16px 0}
+.flow .step{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px}
+.flow .step b{display:block;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.arrow{align-self:center;color:var(--muted);font-size:20px}
+svg text{font-family:system-ui,sans-serif}
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin:16px 0;overflow-x:auto}
+.files{font-family:var(--mono);font-size:13px}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border);padding:16px}
+  main{padding:20px 16px 60px}
+  h1{font-size:28px}
+  .arrow{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+  <h2>Indice</h2>
+  <a href="#panoramica">1. Panoramica</a>
+  <a href="#architettura">2. Architettura</a>
+  <a href="#struttura">3. Struttura del repository</a>
+  <a href="#avvio">4. Avvio in locale</a>
+  <a href="#desktop">5. App desktop (Electron)</a>
+  <a class="sub" href="#processi">Processi e IPC</a>
+  <a class="sub" href="#scan">Scansione del PC</a>
+  <a class="sub" href="#catalogo">Catalogo hardware</a>
+  <a class="sub" href="#matching">Riconoscimento componenti</a>
+  <a class="sub" href="#mybuild">La mia build</a>
+  <a class="sub" href="#parsing">Parsing requisiti Steam</a>
+  <a class="sub" href="#confronto">Motore di confronto</a>
+  <a class="sub" href="#upgrade">Consigli di upgrade</a>
+  <a class="sub" href="#bottleneck">Bilanciamento CPU/GPU</a>
+  <a class="sub" href="#rotte">Pagine e rotte</a>
+  <a href="#api">6. API (NestJS)</a>
+  <a class="sub" href="#endpoint">Endpoint</a>
+  <a class="sub" href="#steam">Modulo Steam</a>
+  <a class="sub" href="#classifica">Classifica 7 giorni</a>
+  <a class="sub" href="#ratelimit">Rate limiter</a>
+  <a class="sub" href="#auth">Autenticazione JWT</a>
+  <a class="sub" href="#oauth">Login Google/Discord/Steam</a>
+  <a class="sub" href="#history">Cronologia e preferiti</a>
+  <a class="sub" href="#ramscore">Punteggio RAM</a>
+  <a href="#db">7. Database</a>
+  <a href="#script">8. Script Python</a>
+  <a href="#web">9. Sito web</a>
+  <a href="#ci">10. CI/CD e rilascio</a>
+  <a href="#sicurezza">11. Sicurezza</a>
+  <a href="#note">12. Note e problemi noti</a>
+</nav>
+
+<main>
+<h1>Build Inspector</h1>
+<p class="lead">Documentazione tecnica completa: come il programma stabilisce se un PC può far girare un gioco Steam, dall'acquisizione dell'hardware fino al verdetto e ai consigli di upgrade.</p>
+
+<!-- ============================================================ -->
+<h2 id="panoramica">1. Panoramica</h2>
+<p>Build Inspector è un'applicazione desktop che <b>scansiona l'hardware del PC</b>, scarica i <b>requisiti minimi di un gioco da Steam</b> e li confronta componente per componente usando i punteggi <b>PassMark</b> di CPU e GPU. Il risultato è una tabella con un verdetto per ogni requisito, un indicatore di "qualità" e, se serve, suggerimenti concreti su cosa aggiornare.</p>
+<div class="grid">
+  <div class="card"><h4>App desktop</h4><p><span class="tag">Electron</span><span class="tag">React 19</span><span class="tag">MUI</span></p><p>Cartella <code>build_inspector/</code>. Interfaccia utente, scansione hardware, motore di confronto e consigli.</p></div>
+  <div class="card"><h4>API</h4><p><span class="tag">NestJS</span><span class="tag">TypeORM</span></p><p>Cartella <code>api/</code>. Proxy/cache verso Steam, catalogo CPU/GPU, account, cronologia, preferiti.</p></div>
+  <div class="card"><h4>Database</h4><p><span class="tag">MariaDB</span><span class="tag">Docker</span></p><p><code>docker-compose.yml</code>. Tabelle hardware, utenti, cache Steam, classifiche.</p></div>
+  <div class="card"><h4>Dati &amp; sito</h4><p><span class="tag">Python</span><span class="tag">Vite</span></p><p><code>script/</code> scarica i benchmark PassMark; <code>web/</code> è il sito di download.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="architettura">2. Architettura</h2>
+<div class="diagram">
+<svg viewBox="0 0 900 360" width="100%" style="min-width:640px" role="img" aria-label="Diagramma architettura">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="currentColor"/></marker></defs>
+  <g style="color:var(--muted)" stroke="currentColor" fill="none" stroke-width="1.5">
+    <rect x="10" y="20" width="330" height="320" rx="10" stroke-dasharray="5 4"/>
+    <rect x="30" y="55" width="290" height="70" rx="8" style="fill:var(--surface2)"/>
+    <rect x="30" y="160" width="290" height="70" rx="8" style="fill:var(--surface2)"/>
+    <rect x="30" y="265" width="290" height="55" rx="8" style="fill:var(--surface2)"/>
+    <rect x="430" y="110" width="210" height="140" rx="10" style="fill:var(--accent-soft)" stroke="var(--accent)"/>
+    <rect x="720" y="40" width="165" height="70" rx="8" style="fill:var(--surface2)"/>
+    <rect x="720" y="145" width="165" height="70" rx="8" style="fill:var(--surface2)"/>
+    <rect x="720" y="250" width="165" height="70" rx="8" style="fill:var(--surface2)"/>
+    <line x1="175" y1="125" x2="175" y2="158" marker-end="url(#ar)"/>
+    <line x1="175" y1="158" x2="175" y2="127" marker-end="url(#ar)"/>
+    <line x1="320" y1="195" x2="428" y2="180" marker-end="url(#ar)"/>
+    <line x1="640" y1="150" x2="718" y2="80" marker-end="url(#ar)"/>
+    <line x1="640" y1="180" x2="718" y2="180" marker-end="url(#ar)"/>
+    <line x1="640" y1="210" x2="718" y2="285" marker-end="url(#ar)"/>
+    <line x1="175" y1="230" x2="175" y2="263" marker-end="url(#ar)"/>
+  </g>
+  <g fill="var(--text)" font-size="14">
+    <text x="22" y="42" font-weight="700">App desktop (Electron)</text>
+    <text x="45" y="83" font-weight="600">Renderer (React)</text>
+    <text x="45" y="105" font-size="12" fill="var(--muted)">UI, compare.ts, upgrades.ts, hardware.ts</text>
+    <text x="45" y="188" font-weight="600">Main process + preload</text>
+    <text x="45" y="210" font-size="12" fill="var(--muted)">IPC, scanPc, client account, token JWT</text>
+    <text x="45" y="298" font-size="12" fill="var(--muted)">systeminformation → hardware locale</text>
+    <text x="185" y="146" font-size="11" fill="var(--muted)">window.api (IPC)</text>
+    <text x="345" y="178" font-size="11" fill="var(--muted)">HTTP</text>
+    <text x="448" y="140" font-weight="700">API NestJS</text>
+    <text x="448" y="162" font-size="12" fill="var(--muted)">porta 3636 (default app)</text>
+    <text x="448" y="185" font-size="12">steam · cpu · gpu · build</text>
+    <text x="448" y="205" font-size="12">auth · history · favorites</text>
+    <text x="448" y="228" font-size="12" fill="var(--muted)">Swagger su /api</text>
+    <text x="735" y="70" font-weight="600">MariaDB</text>
+    <text x="735" y="92" font-size="12" fill="var(--muted)">Docker, porta 3306</text>
+    <text x="735" y="175" font-weight="600">Steam</text>
+    <text x="735" y="197" font-size="12" fill="var(--muted)">Store + Web API</text>
+    <text x="735" y="280" font-weight="600">Google/Discord</text>
+    <text x="735" y="302" font-size="12" fill="var(--muted)">OAuth 2.0 + PKCE</text>
+  </g>
+</svg>
+</div>
+<p>Il principio guida: <b>il renderer non parla mai direttamente con la rete</b> per le operazioni sensibili. Tutte le chiamate passano dal main process tramite IPC; i token JWT restano nel main process e non arrivano mai alla pagina.</p>
+
+<!-- ============================================================ -->
+<h2 id="struttura">3. Struttura del repository</h2>
+<div class="tw"><table>
+<tr><th>Percorso</th><th>Contenuto</th></tr>
+<tr><td class="files">build_inspector/src/main/</td><td>Main process Electron: finestra, IPC account/cronologia/preferiti, impostazioni server.</td></tr>
+<tr><td class="files">build_inspector/src/preload/</td><td>Bridge <code>window.api</code>, scanner, chiamate Steam/hardware, client account, login via browser, parser requisiti.</td></tr>
+<tr><td class="files">build_inspector/src/renderer/src/</td><td>React: pagine, componenti, hook, e la logica core in <code>data/</code> (<code>compare.ts</code>, <code>upgrades.ts</code>, <code>hardware.ts</code>, <code>myBuild.ts</code>).</td></tr>
+<tr><td class="files">build_inspector/src/shared/</td><td>Tipi e validatori condivisi main/renderer (auth, history, favorites, server).</td></tr>
+<tr><td class="files">api/src/</td><td>Moduli NestJS: <code>steam</code>, <code>cpu</code>, <code>gpu</code>, <code>build</code>, <code>auth</code>, <code>user</code>, <code>history</code>, <code>favorites</code>, <code>guard</code>.</td></tr>
+<tr><td class="files">script/</td><td><code>main.py</code> (scraping PassMark), <code>update_db.py</code> (caricamento su MariaDB).</td></tr>
+<tr><td class="files">web/</td><td>Sito vetrina React/Vite con pagina download, pubblicato su GitHub Pages.</td></tr>
+<tr><td class="files">.github/workflows/</td><td><code>pages.yml</code> (sito), <code>release.yml</code> (build e release app).</td></tr>
+<tr><td class="files">docker-compose.yml</td><td>Container MariaDB con database <code>build_inspector</code>.</td></tr>
+</table></div>
+
+<!-- ============================================================ -->
+<h2 id="avvio">4. Avvio in locale</h2>
+<pre><code># 1. Database
+docker compose up -d
+
+# 2. Popolare CPU/GPU (richiede playwright + bs4 + pymysql)
+cd script &amp;&amp; python main.py &amp;&amp; python update_db.py
+
+# 3. API (configurare api/.env, vedi sotto)
+cd api &amp;&amp; npm install &amp;&amp; npm run start:dev
+
+# 4. App desktop
+cd build_inspector &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
+<h4>Variabili d'ambiente API (<code>api/.env</code>)</h4>
+<div class="tw"><table>
+<tr><th>Variabile</th><th>Uso</th></tr>
+<tr><td><code>DATABASE_TYPE/HOST/PORT/USER/USER_PASSWORD/NAME</code></td><td>Connessione TypeORM a MariaDB.</td></tr>
+<tr><td><code>DATABASE_AUTOLOAD_ENTITIES</code>, <code>DATABSE_SYNC</code>, <code>DATABSE_LOGGING</code></td><td>Opzioni TypeORM (nota il refuso "DATABSE" nel codice).</td></tr>
+<tr><td><code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code></td><td>Firme dei token (obbligatorie).</td></tr>
+<tr><td><code>JWT_ACCESS_EXPIRES</code>, <code>JWT_REFRESH_EXPIRES</code></td><td>Durate, default <code>15m</code> e <code>7d</code>.</td></tr>
+<tr><td><code>PORT</code></td><td>Porta HTTP (default 3000; l'app si aspetta 3636).</td></tr>
+<tr><td>Credenziali OAuth Google/Discord, <code>STEAM_API_KEY</code></td><td>Login esterni (Steam key opzionale, solo per il nome visualizzato).</td></tr>
+</table></div>
+<p>L'app sceglie l'indirizzo dell'API in questo ordine: variabile <code>BUILD_INSPECTOR_API_URL</code> → valore salvato in <code>userData/server.json</code> (pagina Impostazioni) → default <code>http://localhost:3636</code>. HTTP è ammesso solo per localhost.</p>
+
+<!-- ============================================================ -->
+<h2 id="desktop">5. App desktop (Electron)</h2>
+
+<h3 id="processi">5.1 Processi e IPC</h3>
+<p><code>src/main/index.ts</code> all'avvio esegue, in ordine: <code>loadServerUrl()</code> (fissa la base URL dell'API), <code>registerIpc()</code> (canali scanner/Steam/hardware), <code>registerAccountIpc()</code> (account, cronologia, preferiti, server) e infine crea la finestra 1280×800. I link esterni vengono aperti nel browser di sistema, mai in una nuova finestra Electron.</p>
+<p>Il preload (<code>src/preload/index.ts</code>) espone tramite <code>contextBridge</code> un unico oggetto:</p>
+<pre><code>window.api = {
+  account:   { getSession, signIn, signUp, signOut, signInWithProvider, cancelBrowserSignIn },
+  steam:     { search, requirements, top, topGenres, details },
+  scanner:   { scan },
+  hardware:  { catalog },
+  history:   { list, record, remove, clear },
+  favorites: { list, add, remove },
+  server:    { get, test, save }
+}</code></pre>
+<p>Ogni metodo è un <code>ipcRenderer.invoke</code> su un canale. Gli handler nel main <b>validano sempre l'input</b> (es. <code>appId</code> intero sicuro &gt; 0, termine di ricerca troncato a 100 caratteri, max ID per richiesta) e, per i canali account, verificano con <code>trusted(event)</code> che la richiesta arrivi dal frame principale della pagina dell'app (stesso protocollo, host e path).</p>
+
+<h3 id="scan">5.2 Scansione del PC — <code>preload/scanner/scanPc.ts</code></h3>
+<p>Usa la libreria <code>systeminformation</code> lanciando in parallelo 8 interrogazioni: <code>cpu</code>, <code>graphics</code>, <code>mem</code>, <code>memLayout</code>, <code>diskLayout</code>, <code>baseboard</code>, <code>osInfo</code>, <code>fsSize</code>. Ognuna è avvolta in <code>safe()</code>: se fallisce restituisce un valore di ripiego invece di far fallire tutta la scansione.</p>
+<p>Il risultato <code>ScannedPc</code> contiene:</p>
+<ul>
+<li><b>os</b>: platform, distro, release;</li>
+<li><b>cpu</b>: nome (<code>manufacturer + brand</code>), core fisici, thread, clock, socket;</li>
+<li><b>gpus[]</b>: nome, modello, vendor, VRAM in MB (una voce per scheda, integrate comprese);</li>
+<li><b>ram</b>: totale in GB e moduli (dimensione, tipo DDR, MHz, part number — <i>mai i numeri di serie</i>);</li>
+<li><b>storage</b> e <b>freeStorageGb</b>: lo spazio libero è la somma dei volumi montati, contando ogni mount una sola volta;</li>
+<li><b>motherboard</b>: produttore e modello.</li>
+</ul>
+
+<h3 id="catalogo">5.3 Catalogo hardware — <code>preload/hardware/hardwareCalls.ts</code></h3>
+<p>Scarica <code>GET /cpu</code> e <code>GET /gpu</code> dall'API una sola volta per esecuzione (promise in cache, azzerata in caso di errore). <code>toParts()</code> scarta righe malformate, tronca i nomi a 255 caratteri e, se un nome compare due volte, tiene il <b>Mark</b> PassMark più alto. Se uno dei due elenchi è vuoto l'utente viene invitato a eseguire <code>script/update_db.py</code>.</p>
+
+<h3 id="matching">5.4 Riconoscimento dei componenti — <code>renderer/src/data/hardware.ts</code></h3>
+<p>Il problema: il nome rilevato dal sistema (<code>Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz</code>) è diverso da quello nel database PassMark (<code>Intel Core i5-8400</code>), e Steam scrive ancora in un altro modo (<code>Core i5-8400 or Ryzen 5 1600</code>).</p>
+<h4><code>nameTokens(name)</code></h4>
+<p>Normalizza in token: minuscolo, rimuove <code>(R)</code>, <code>(TM)</code>, ®, ™, la frequenza <code>@ 2.80GHz</code>, unisce <code>i5 750</code> → <code>i5-750</code> e divide su spazi, virgole e slash.</p>
+<pre><code>"Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz" → ["intel","core","i5-8400","cpu"]</code></pre>
+<h4><code>matchPart(scannedName, parts)</code> — dallo scan al catalogo</h4>
+<p>Una voce del catalogo corrisponde se <b>tutti i suoi token</b> sono presenti nel nome scansionato, ha almeno 2 token e almeno uno contiene una cifra (un numero di modello). Tra i candidati vince quello con <b>più token</b> (così <code>RTX 3060 Laptop GPU</code> batte <code>RTX 3060</code>, e <code>RTX 3060</code> non viene confuso con <code>RTX 3060 Ti</code>); a parità, il Mark più alto.</p>
+<h4><code>detectBuild(pc, catalog)</code></h4>
+<p>Applica <code>matchPart</code> alla CPU e a ogni GPU (prima sul nome, poi sul modello) e sceglie la <b>GPU più veloce</b> — utile con integrata + dedicata.</p>
+<h4><code>matchRequirement(text, parts)</code> — dal testo Steam al catalogo</h4>
+<p>Divide la riga dei requisiti sulle alternative (<code>or</code>, <code>o</code>, <code>oppure</code>, <code>/ , ; |</code>, <code> - </code>) e per ciascuna chiama <code>matchAlternative</code>. Qui il matching è più permissivo: tutti i numeri di modello devono comparire, mentre le parole di marca (<code>intel, amd, nvidia, ati, geforce, radeon, core</code>, e "<code>x-core</code>") sono opzionali perché Steam spesso le omette. Servono almeno 2 token corrispondenti; a parità vince il Mark <i>più basso</i> (approccio prudente).</p>
+
+<h3 id="mybuild">5.5 "La mia build" — <code>data/myBuild.ts</code></h3>
+<p>L'utente può sovrascrivere a mano CPU, GPU e RAM (es. per simulare un PC che vuole comprare). La build è salvata nelle preferenze locali con chiave <code>bi.build.&lt;userId&gt;</code> e un flag <code>manual</code> per campo.</p>
+<p><code>effectiveBuild(saved, detected, isKnown)</code> decide per ogni campo:</p>
+<ol>
+<li>se il valore salvato è <b>manuale</b> e ancora presente nel catalogo → usa quello;</li>
+<li>altrimenti, se lo scan ha rilevato qualcosa → usa lo scan;</li>
+<li>altrimenti ripiega sul valore salvato (o vuoto).</li>
+</ol>
+<p>I vecchi salvataggi senza <code>manual</code> vengono trattati come interamente manuali.</p>
+
+<h3 id="parsing">5.6 Parsing dei requisiti Steam — <code>preload/steam/requirements.ts</code></h3>
+<p>Steam restituisce <code>pc_requirements.minimum</code> come HTML, ad esempio:</p>
+<pre><code>&lt;strong&gt;Minimi:&lt;/strong&gt;&lt;br&gt;&lt;ul&gt;&lt;li&gt;&lt;strong&gt;Memoria:&lt;/strong&gt; 8 GB di RAM&lt;/li&gt;…&lt;/ul&gt;</code></pre>
+<p><code>parseRequirements(html)</code> lavora <b>nel main process</b> così il renderer non riceve mai HTML esterno:</p>
+<ol>
+<li>isola ogni <code>&lt;li&gt;</code>;</li>
+<li>estrae l'etichetta dentro <code>&lt;strong&gt;</code> e il valore dopo;</li>
+<li><code>toText()</code> toglie i tag, decodifica le entità (<code>&amp;amp;</code>, <code>&amp;#174;</code>, <code>&amp;#x2122;</code>…) e compatta gli spazi;</li>
+<li>rimuove l'intestazione "Minimi:" / "Minimum:";</li>
+<li><code>kindOf(label)</code> classifica la riga in <code>os | cpu | ram | gpu | storage | directx | other</code> con regex bilingui (italiano/inglese);</li>
+<li>limita a 20 righe da 500 caratteri.</li>
+</ol>
+<p><code>sizeInGb(text)</code> (in <code>shared/units.ts</code>) estrae dimensioni come <code>8 GB</code>, <code>4096 MB</code>, <code>1,5 TB</code> convertendole in GB. <code>getGameMinimumRequirements</code> la usa per calcolare <code>ramGb</code> e <code>storageGb</code>.</p>
+
+<h3 id="confronto">5.7 Motore di confronto — <code>data/compare.ts</code> ★</h3>
+<p>È il cuore dell'applicazione. <code>compareWithPc(requirements, pc, catalog, build)</code> produce una <code>ComparisonRow</code> per ogni requisito minimo.</p>
+<h4>Verdetti</h4>
+<div class="tw"><table>
+<tr><th>Verdetto</th><th>Significato</th></tr>
+<tr><td class="ok">ok</td><td>Il PC soddisfa il requisito.</td></tr>
+<tr><td class="low">low</td><td>Il PC non lo soddisfa.</td></tr>
+<tr><td class="check">check</td><td>Non decidibile dai dati: da verificare a mano.</td></tr>
+<tr><td class="info">info</td><td>Nulla da confrontare (DirectX, note).</td></tr>
+</table></div>
+<h4>Lo <code>score</code></h4>
+<p>Percentuale tuo/richiesto: <code>Math.round(tuo / richiesto × 100)</code>. 100 = esattamente il minimo, 250 = due volte e mezza. <code>null</code> se non misurabile.</p>
+
+<h4>Logica per tipo di requisito</h4>
+<div class="tw"><table>
+<tr><th>Tipo</th><th>Come viene confrontato</th></tr>
+<tr><td><b>cpu</b></td><td><code>comparePart</code>: trova i componenti elencati da Steam con <code>matchRequirement</code>; se ce ne sono più (alternative) prende il <b>più debole</b> (basta raggiungere quello). Confronta i Mark PassMark. Nessun modello riconosciuto → <span class="check">check</span>; tua CPU non nel catalogo → <span class="check">check</span>.</td></tr>
+<tr><td><b>gpu</b></td><td>Come la CPU. Se però Steam non nomina un modello ma una quantità di VRAM ("1 GB di memoria video"), confronta la VRAM rilevata. La VRAM scansionata non viene usata se la GPU è stata scelta a mano.</td></tr>
+<tr><td><b>ram</b></td><td><code>compareSize</code> su GB: richiesti vs installati (o della build manuale). Se manca: "Mancano N GB".</td></tr>
+<tr><td><b>storage</b></td><td><code>compareSize</code> sui GB richiesti vs <b>spazio libero</b> totale.</td></tr>
+<tr><td><b>os</b></td><td><code>compareOs</code>: famiglia richiesta (Windows di default, macOS/Linux se nominati) vs famiglia del PC (<code>darwin</code> testato prima di <code>win</code>, perché "darwin" contiene "win"). Famiglie diverse → <span class="low">low</span>. Per Windows: se il gioco cita una versione &lt; 10 → <span class="check">check</span>; se il PC è &lt; 10 → <span class="low">low</span>; altrimenti 10 e 11 sono considerati equivalenti → <span class="ok">ok</span>.</td></tr>
+<tr><td><b>directx / other</b></td><td>Sempre <span class="info">info</span>.</td></tr>
+</table></div>
+
+<h4>Esempio</h4>
+<pre><code>Steam:   "Intel Core i5-4460 or AMD FX-6300"
+Catalogo: i5-4460 → 5.200   FX-6300 → 4.300   (valori di esempio)
+Necessario = il più debole = FX-6300 (4.300)
+Tua CPU:  Ryzen 5 5600 → 21.500
+score = round(21500 / 4300 × 100) = 500 %  → ok</code></pre>
+
+<h4>Funzioni di supporto</h4>
+<ul>
+<li><code>summarize(rows)</code>: conteggio per verdetto (per il riepilogo in alto);</li>
+<li><code>weakestRow(rows)</code>: la riga misurabile con score più basso, cioè il <b>collo di bottiglia</b>;</li>
+<li><code>historyRecord(...)</code>: costruisce il record salvato in cronologia (gioco, CPU, GPU, RAM, conteggi met/failed/toCheck).</li>
+</ul>
+<h4>Indicatore di qualità (<code>compare.tsx</code>)</h4>
+<p>La barra va da 0 a 200% (il minimo sta a metà). Fasce: &lt;100 <span class="low">Sotto il minimo</span> · 100–129 <span class="check">Al limite</span> · 130–199 <span class="ok">Buono</span> · ≥200 <span class="ok">Eccellente</span>.</p>
+
+<h4>Flusso completo di un confronto</h4>
+<div class="flow">
+  <div class="step"><b>1</b>Utente apre <code>/confronto/:appId</code></div><span class="arrow">→</span>
+  <div class="step"><b>2</b><code>steam.requirements</code> → API → Steam → parse</div><span class="arrow">→</span>
+  <div class="step"><b>3</b><code>scanner.scan</code> + <code>hardware.catalog</code></div><span class="arrow">→</span>
+  <div class="step"><b>4</b><code>effectiveBuild</code> + <code>compareWithPc</code></div><span class="arrow">→</span>
+  <div class="step"><b>5</b><code>suggestUpgrades</code> + tabella</div><span class="arrow">→</span>
+  <div class="step"><b>6</b><code>history.record</code> (se loggato)</div>
+</div>
+
+<h3 id="upgrade">5.8 Consigli di upgrade — <code>data/upgrades.ts</code> ★</h3>
+<p><code>suggestUpgrades(rows, requirements, pc, catalog, build)</code> genera un consiglio per ogni riga:</p>
+<ul>
+<li><b>required</b>: verdetto <span class="low">low</span>;</li>
+<li><b>recommended</b>: verdetto <span class="ok">ok</span> ma con score &lt; 130 (<code>TIGHT_SCORE</code>).</li>
+</ul>
+<p>I required vengono ordinati per primi.</p>
+
+<h4>Obiettivo di prestazione</h4>
+<pre><code>target = max( neededMark × 1.30 ,  yourMark × 1.20 )
+          ↑ margine "Buono"        ↑ il nuovo pezzo deve essere almeno +20%</code></pre>
+<p>Il catalogo non ha prezzi, quindi "economico" viene approssimato con <code>cheapestAbove()</code>: i componenti con Mark ≥ target ordinati dal più debole.</p>
+
+<h4>Processori — <code>cpuSocket()</code> e <code>cpuParts()</code></h4>
+<p><code>cpuSocket(name)</code> deduce il socket dal nome con regex:</p>
+<div class="tw"><table>
+<tr><th>Famiglia</th><th>Socket</th></tr>
+<tr><td>Ryzen serie 1000–5000</td><td>AM4</td></tr>
+<tr><td>Ryzen serie 7000–9000</td><td>AM5 (DDR5)</td></tr>
+<tr><td>Intel Core 6ª–7ª gen</td><td>LGA1151</td></tr>
+<tr><td>Intel Core 8ª–9ª gen</td><td>LGA1151 v2 (non compatibile col precedente)</td></tr>
+<tr><td>Intel Core 10ª–11ª gen</td><td>LGA1200</td></tr>
+<tr><td>Intel Core 12ª–14ª gen</td><td>LGA1700</td></tr>
+<tr><td>Intel Core Ultra 2xx</td><td>LGA1851 (DDR5)</td></tr>
+</table></div>
+<p>Portatili, server e modelli sconosciuti restituiscono <code>null</code> e non vengono mai suggeriti. Strategia:</p>
+<ol>
+<li>cerca la CPU più economica sopra il target <b>sullo stesso socket</b> → "Compatibile con la tua scheda madre";</li>
+<li>se non esiste, propone <b>una AMD e una Intel</b> dei socket attuali (AM5, LGA1700, LGA1851), avvisando che serve una nuova scheda madre ed eventualmente RAM DDR5.</li>
+</ol>
+
+<h4>Schede video — <code>gpuParts()</code></h4>
+<p>Considera solo GPU desktop recenti ancora in vendita (regex <code>DESKTOP_GPU</code>: RTX 20/30/40/50, GTX 16, RX 6000/7000/9000, Arc A/B). Preferisce le generazioni più nuove (<code>RECENT_GPU</code>) e restituisce fino a 3 proposte, <b>una per marca</b> (NVIDIA, AMD, Intel). Aggiunge un avviso su alimentatore e dimensioni del case.</p>
+
+<h4>RAM, disco, sistema operativo</h4>
+<ul>
+<li><b>RAM</b>: sceglie la prima taglia tra 8/16/32/64/128 GB ≥ richiesto (×1.3 se solo raccomandato) e maggiore dell'attuale; suggerisce un kit 2×N con lo stesso tipo/frequenza dei moduli rilevati, dual channel e controllo slot.</li>
+<li><b>Disco</b>: indica quanti GB liberare oppure un SSD da 500 GB/1/2/4 TB (≥ 2× lo spazio richiesto).</li>
+<li><b>OS</b>: su Linux suggerisce Proton/ProtonDB, altrimenti il dual boot con Windows 10/11.</li>
+</ul>
+
+<h3 id="bottleneck">5.9 Bilanciamento CPU/GPU — <code>hardware.ts</code></h3>
+<p>Per il form della build, i Mark vengono portati su scala 0–100 (max 150) usando come riferimento i9-14900K e RTX 4090 = 100:</p>
+<pre><code>cpuScore = 100 × √(mark / mark_i9-14900K)       // le CPU scalano con la radice: i giochi usano pochi core
+gpuScore = 100 × (mark / mark_RTX4090) ^ 0.8</code></pre>
+<p><code>getBottleneck(cpu, gpu)</code>: se uno dei due è &lt; 75% dell'altro segnala il collo di bottiglia, altrimenti "ben bilanciate".</p>
+
+<h3 id="rotte">5.10 Pagine e rotte — <code>AppRoutes.tsx</code></h3>
+<div class="tw"><table>
+<tr><th>Rotta</th><th>Pagina</th><th>Accesso</th></tr>
+<tr><td><code>/home</code></td><td>Home + catalogo giochi (classifica, filtri per genere, ricerca)</td><td>Pubblica</td></tr>
+<tr><td><code>/login</code>, <code>/registrazione</code>, <code>/recupera-password</code></td><td>Autenticazione</td><td>Pubblica</td></tr>
+<tr><td><code>/impostazioni</code></td><td>Tema, indirizzo server API</td><td>Pubblica</td></tr>
+<tr><td><code>/configurazione</code></td><td>Post-registrazione: scansione e "La mia build"</td><td>Login</td></tr>
+<tr><td><code>/confronto/:appId</code></td><td>Confronto gioco vs PC + upgrade</td><td>Login</td></tr>
+<tr><td><code>/preferiti</code></td><td>Giochi preferiti</td><td>Login</td></tr>
+<tr><td><code>/cronologia</code></td><td>Storico confronti</td><td>Login</td></tr>
+</table></div>
+<p>Le rotte protette sono avvolte da <code>ProtectedRoute</code>, che legge lo stato da <code>AuthProvider</code>. La logica UI è organizzata in hook (<code>useCatalog</code>, <code>useGameRequirements</code>, <code>usePcScan</code>, <code>useMyBuild</code>, <code>useHistory</code>, <code>useFavorites</code>…).</p>
+
+<!-- ============================================================ -->
+<h2 id="api">6. API (NestJS)</h2>
+<p><code>main.ts</code> crea l'app con <code>ValidationPipe({ transform: true })</code> globale e la documentazione Swagger su <code>/api</code>. <code>AppModule</code> configura TypeORM da <code>.env</code> (timezone UTC per allinearsi al container MariaDB) e applica <code>LoggerMiddleware</code> a tutte le rotte.</p>
+
+<h3 id="endpoint">6.1 Endpoint</h3>
+<div class="tw"><table>
+<tr><th>Metodo</th><th>Rotta</th><th>Auth</th><th>Descrizione</th></tr>
+<tr><td>GET</td><td><code>/steam/games/search?q=</code></td><td>—</td><td>Ricerca nello store Steam (proxy di <code>storesearch</code>).</td></tr>
+<tr><td>GET</td><td><code>/steam/games/:appId</code></td><td>—</td><td>Nome, requisiti PC/Mac/Linux, piattaforme (cache 7 giorni).</td></tr>
+<tr><td>GET</td><td><code>/steam/games/top?limit=&amp;genre=</code></td><td>—</td><td>Più giocati negli ultimi 7 giorni (limit 1–24).</td></tr>
+<tr><td>GET</td><td><code>/steam/games/top/genres</code></td><td>—</td><td>Generi della classifica, i più comuni prima.</td></tr>
+<tr><td>GET</td><td><code>/steam/games/details?ids=</code></td><td>—</td><td>Dati scheda per più giochi (max 100 ID).</td></tr>
+<tr><td>GET</td><td><code>/cpu</code>, <code>/gpu</code></td><td>—</td><td>Catalogo completo con Mark PassMark.</td></tr>
+<tr><td>GET</td><td><code>/cpu/get/:id</code>, <code>/gpu/get/:id</code></td><td>—</td><td>Singolo componente.</td></tr>
+<tr><td>GET</td><td><code>/build/cpu/:name</code>, <code>/build/gpu/:name</code></td><td>—</td><td>Ricerca parziale (ILIKE).</td></tr>
+<tr><td>POST</td><td><code>/auth/user</code></td><td>—</td><td>Registrazione.</td></tr>
+<tr><td>GET/PATCH</td><td><code>/auth/user/:id</code></td><td>JWT</td><td>Lettura/modifica utente (solo se stessi).</td></tr>
+<tr><td>POST</td><td><code>/auth/login</code>, <code>/auth/refresh</code></td><td>—</td><td>Login email/password, rinnovo token.</td></tr>
+<tr><td>POST</td><td><code>/auth/logout</code></td><td>JWT</td><td>Invalida il refresh token.</td></tr>
+<tr><td>GET</td><td><code>/auth/:provider/start</code>, <code>/callback</code></td><td>—</td><td>Login Google/Discord/Steam.</td></tr>
+<tr><td>POST</td><td><code>/auth/oauth/exchange</code></td><td>—</td><td>Scambio codice monouso + PKCE → token.</td></tr>
+<tr><td>GET/POST/DELETE</td><td><code>/history</code>, <code>/history/:id</code></td><td>JWT</td><td>Cronologia confronti.</td></tr>
+<tr><td>GET/POST/DELETE</td><td><code>/favorites</code>, <code>/favorites/:appId</code></td><td>JWT</td><td>Preferiti (ogni rotta restituisce l'intera lista).</td></tr>
+</table></div>
+
+<h3 id="steam">6.2 Modulo Steam</h3>
+<h4><code>SteamService.getGamebyId(appId)</code></h4>
+<ol>
+<li>Valida l'ID (1–10 cifre, ≤ 2³¹−1), altrimenti 400.</li>
+<li>Cerca nella tabella <code>SteamGame</code>: se la copia ha meno di 7 giorni (<code>REQUIREMENTS_TTL_MS</code>) la restituisce subito.</li>
+<li>Chiede un "gettone" al rate limiter; se negato, usa la copia vecchia o risponde 503.</li>
+<li>Chiama <code>appdetails?appids=…&amp;l=italian</code> (timeout 10 s). Un 429 attiva il backoff.</li>
+<li>Filtra i campi con <code>plainToInstance(..., excludeExtraneousValues)</code> e salva con <code>upsert</code>.</li>
+</ol>
+<p>Principio: <b>una copia vecchia è meglio di niente</b>.</p>
+<h4><code>SteamDetailsService</code></h4>
+<p>Fornisce i dati delle schede (nome, descrizione, generi, immagine) tramite <code>IStoreBrowseService/GetItems</code> in <b>lotti da 100</b>. TTL 7 giorni per i giochi noti, 1 giorno per gli ID sconosciuti. I generi sono i tag della community tradotti in italiano (<code>GetTagList</code>, aggiornati una volta al giorno, max 10 per gioco). Le richieste in corso sono condivise per evitare duplicati. Solo i contenuti di tipo "gioco" (no DLC, colonne sonore, software) passano <code>isPlayableGame</code>.</p>
+
+<h3 id="classifica">6.3 Classifica a 7 giorni — <code>steam-charts.service.ts</code></h3>
+<p>All'avvio e ogni 6 ore <code>saveLatestDay()</code> scarica <code>ISteamChartsService/GetMostPlayedGames</code> (top 100 del giorno) e lo salva nella tabella dei giorni (una sola volta per giorno, <code>orIgnore</code>). Poi precarica in background i dettagli dei giochi.</p>
+<p><code>rankOverDays(rows, days)</code> calcola il <b>rango medio</b> sugli ultimi 7 giorni salvati; un gioco assente in un giorno conta come rango 101. A parità vince il rango più recente.</p>
+<pre><code>Gioco A: 1, 1, 2, 1, 1, 1, 1   → media 1.1
+Gioco B: 3, –, –, 2, 2, 3, 2   → (3+101+101+2+2+3+2)/7 = 30.6</code></pre>
+<p>La lista ordinata (max 150 giochi) viene tenuta in memoria per 1 ora; il filtro per genere confronta i tag in italiano senza distinzione di maiuscole.</p>
+
+<h3 id="ratelimit">6.4 Rate limiter — <code>steam-rate-limiter.ts</code></h3>
+<p>Finestra scorrevole di 5 minuti per host: <b>store</b> max 100 richieste (Steam ne permette ~200), <b>webapi</b> max 60. <code>take(host)</code> restituisce <code>true</code> e registra la richiesta se c'è spazio. Dopo un HTTP 429, <code>rateLimited(host)</code> blocca quell'host per 5 minuti. Chi riceve "no" non aspetta: usa i dati già in database.</p>
+
+<h3 id="auth">6.5 Autenticazione JWT</h3>
+<div class="flow">
+  <div class="step"><b>Login</b><code>bcrypt.compare</code> della password</div><span class="arrow">→</span>
+  <div class="step"><b>issueTokens</b>access (15m) + refresh (7d), payload <code>{sub, Username, Email}</code></div><span class="arrow">→</span>
+  <div class="step"><b>Salvataggio</b>hash bcrypt del refresh nel DB</div><span class="arrow">→</span>
+  <div class="step"><b>Refresh</b>verifica firma + hash → nuova coppia (rotazione)</div>
+</div>
+<ul>
+<li><code>JwtAuthGuard</code> legge <code>Authorization: Bearer …</code>, verifica con <code>JWT_ACCESS_SECRET</code> e mette il payload in <code>req.user</code>.</li>
+<li>Gli account creati via Google/Discord/Steam non hanno password: il login con password non li trova mai.</li>
+<li>Logout = <code>RefreshToken</code> a <code>null</code>.</li>
+</ul>
+<h4>Lato client — <code>preload/auth/auth.ts</code></h4>
+<p><code>createAccountClient()</code> gira nel main process e tiene i token in una variabile in memoria. <code>authorized(method, path, body)</code> invia la richiesta col token; su 401 rinnova <b>una volta</b> il token e ripete. Le richieste di refresh concorrenti condividono la stessa promise (<code>refreshing ??=</code>) per non bruciare due volte la rotazione. Rifiuta URL con credenziali, query o hash, segue zero redirect, timeout 10 s, e traduce i codici HTTP in messaggi italiani.</p>
+
+<h3 id="oauth">6.6 Login con Google, Discord e Steam</h3>
+<p>Segue la RFC 8252 (app native): il login avviene nel <b>browser di sistema</b>, con un server temporaneo su <code>127.0.0.1</code> che riceve il ritorno.</p>
+<div class="diagram">
+<svg viewBox="0 0 900 330" width="100%" style="min-width:640px" role="img" aria-label="Sequenza login OAuth">
+  <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="currentColor"/></marker></defs>
+  <g fill="var(--text)" font-size="13" font-weight="600" text-anchor="middle">
+    <text x="90" y="22">App (main)</text><text x="330" y="22">Browser</text><text x="570" y="22">API</text><text x="800" y="22">Provider</text>
+  </g>
+  <g stroke="var(--border)" stroke-width="1.5"><line x1="90" y1="32" x2="90" y2="320"/><line x1="330" y1="32" x2="330" y2="320"/><line x1="570" y1="32" x2="570" y2="320"/><line x1="800" y1="32" x2="800" y2="320"/></g>
+  <g style="color:var(--accent)" stroke="currentColor" stroke-width="1.5" marker-end="url(#a2)">
+    <line x1="90" y1="60" x2="326" y2="60"/><line x1="330" y1="95" x2="566" y2="95"/><line x1="570" y1="130" x2="796" y2="130"/>
+    <line x1="800" y1="165" x2="574" y2="165"/><line x1="570" y1="200" x2="334" y2="200"/><line x1="330" y1="235" x2="94" y2="235"/>
+    <line x1="90" y1="270" x2="566" y2="270"/><line x1="570" y1="305" x2="94" y2="305"/>
+  </g>
+  <g fill="var(--muted)" font-size="11.5">
+    <text x="100" y="54">1. server su 127.0.0.1:porta, verifier+challenge, state</text>
+    <text x="340" y="89">2. /auth/google/start?port&amp;challenge&amp;state</text>
+    <text x="580" y="124">3. redirect + PKCE propria dell'API</text>
+    <text x="580" y="159">4. login utente → /callback?code</text>
+    <text x="340" y="194">5. API crea/collega utente, codice monouso</text>
+    <text x="100" y="229">6. 127.0.0.1/callback?code&amp;state</text>
+    <text x="100" y="264">7. POST /auth/oauth/exchange {code, verifier}</text>
+    <text x="100" y="299">8. sha256(verifier) == challenge → access + refresh token</text>
+  </g>
+</svg>
+</div>
+<ul>
+<li><b>Doppia PKCE</b>: una tra app e API (il codice monouso è utilizzabile solo da chi conosce il <code>verifier</code>, confronto con <code>timingSafeEqual</code>), una tra API e provider.</li>
+<li>Login in sospeso valido 10 minuti, codice monouso 60 secondi, timeout lato app 3 minuti.</li>
+<li><b>Steam</b> usa OpenID 2.0: l'API rimanda a Steam la risposta firmata (<code>check_authentication</code>) per verificarla, estrae lo SteamID a 17 cifre e ricava il nome dal Web API o dal profilo XML pubblico.</li>
+<li><code>userFor()</code>: identità già collegata → stesso utente; email esistente <b>verificata</b> → collega l'account; email non verificata → rifiuto (evita il furto di account); altrimenti crea un nuovo utente.</li>
+<li>Lo username è generato dai nomi del provider: normalizzazione Unicode (es. "𝕭𝖑𝖔𝖔𝖉𝖞" → "Bloody"), rimozione accenti, 3–50 caratteri <code>a-z 0-9 . _ -</code>; collisioni risolte con un suffisso esadecimale.</li>
+</ul>
+
+<h3 id="history">6.7 Cronologia e preferiti</h3>
+<p><b>HistoryService</b>: rifare lo stesso confronto entro <b>10 minuti</b> aggiorna la voce esistente invece di crearne una nuova; si tengono al massimo <b>100 voci</b> per utente (le più vecchie vengono eliminate da <code>trim()</code>). La cancellazione filtra sempre anche per <code>UserId</code>, quindi nessuno può cancellare voci altrui.</p>
+<p><b>FavoritesService</b>: max <b>500</b> preferiti, deduplicazione, insert con <code>orIgnore</code> contro le race condition su indice unico; rimuovere un gioco non presente non è un errore.</p>
+
+<h3 id="ramscore">6.8 Punteggio RAM — <code>BuildService.GetRamWithScore</code></h3>
+<pre><code>cas         = numero da Latency ("CL16", "16-18-18-38"), default 16
+latenza_ns  = cas × 2000 / MHz
+Sv = MHz × fattore(DDR3 0.8 | DDR4 1 | DDR5 1.2) / 100
+Sl = max(0, 20 − latenza_ns) × 5
+Sc = min(GB, 64) × 2
+score = 0.4·Sv + 0.3·Sl + 0.3·Sc</code></pre>
+<p>Esempio DDR4-3200 CL16 16 GB: latenza 10 ns → Sv 32, Sl 50, Sc 32 → score = 12.8 + 15 + 9.6 = <b>37.4</b>.</p>
+
+<!-- ============================================================ -->
+<h2 id="db">7. Database</h2>
+<div class="tw"><table>
+<tr><th>Tabella</th><th>Colonne principali</th><th>Note</th></tr>
+<tr><td><code>Cpu</code></td><td>id, Name, Mark, Cores, Socket</td><td>Popolata da <code>update_db.py</code>.</td></tr>
+<tr><td><code>Gpu</code></td><td>id, Name, Mark</td><td>Popolata da <code>update_db.py</code>.</td></tr>
+<tr><td><code>User</code></td><td>id, Username (unique), Email (unique, nullable), Password (nullable, bcrypt), RefreshToken (hash)</td><td>Email null per Steam, password null per login esterni.</td></tr>
+<tr><td><code>UserIdentity</code></td><td>UserId, Provider, ProviderUserId</td><td>Unique (Provider, ProviderUserId); cascade sull'utente.</td></tr>
+<tr><td><code>ComparisonHistory</code></td><td>UserId, AppId, GameName, CpuName, GpuName, RamGb, Met, Failed, ToCheck, created_at, updated_at</td><td>Indice (UserId, updated_at).</td></tr>
+<tr><td><code>Favorite</code></td><td>UserId, AppId, created_at</td><td>Unique per utente+gioco.</td></tr>
+<tr><td><code>SteamGame</code></td><td>AppId (PK), Found, Type, Name, Description, TagIds, ImageUrl, UpdatedAt, Requirements (JSON), RequirementsAt</td><td>Cache delle risposte Steam (schede e requisiti).</td></tr>
+<tr><td><code>SteamChartDay</code></td><td>Day, AppId, Rank, PeakPlayers</td><td>Unique (Day, AppId): una riga per gioco per giorno.</td></tr>
+</table></div>
+
+<!-- ============================================================ -->
+<h2 id="script">8. Script Python</h2>
+<ol>
+<li><b><code>main.py</code></b>: con Playwright (Chromium headless) apre <code>cpubenchmark.net/CPU_mega_page.html</code> e <code>videocardbenchmark.net/gpu_list.php</code>, seleziona "mostra tutto", estrae la tabella <code>#cputable</code> con BeautifulSoup e salva <code>hardware_data_clean.json</code> (CPU: nome, core, mark, socket; GPU: nome, mark).</li>
+<li><b><code>update_db.py</code></b>: crea le tabelle se mancano, <b>svuota</b> <code>Cpu</code> e <code>Gpu</code>, e reinserisce tutto (togliendo le virgole dai mark, socket "Unknown" → NULL).</li>
+</ol>
+<p>Dopo un aggiornamento l'app vede i nuovi dati al riavvio successivo (il catalogo è in cache per sessione).</p>
+
+<!-- ============================================================ -->
+<h2 id="web">9. Sito web — <code>web/</code></h2>
+<p>Sito React + Vite + MUI con pagine Home, Explore, Download, About Us e 404, tema chiaro/scuro (<code>useThemeMode</code>). <code>downloads.ts</code> punta ai file dell'ultima release GitHub (<code>/releases/latest/download/…</code>): <code>Build-Inspector-Setup.exe</code>, <code>.dmg</code> per macOS e il pacchetto Linux, con istruzioni per il primo avvio (l'app non è firmata).</p>
+
+<!-- ============================================================ -->
+<h2 id="ci">10. CI/CD e rilascio</h2>
+<div class="tw"><table>
+<tr><th>Workflow</th><th>Trigger</th><th>Cosa fa</th></tr>
+<tr><td><code>pages.yml</code></td><td>push su <code>master</code></td><td>Build del sito con Node 24, copia <code>index.html</code> in <code>404.html</code> (routing SPA), deploy su GitHub Pages.</td></tr>
+<tr><td><code>release.yml</code></td><td>tag <code>v*</code></td><td>Matrice Windows/macOS/Linux: <code>npm ci</code> → <code>npm test</code> → <code>npm run build</code> → <code>electron-builder</code>; poi pubblica la release "Build Inspector vX.Y.Z".</td></tr>
+</table></div>
+<p>Test: Vitest sia nell'app (<code>build_inspector/tests</code>, <code>__tests__</code>) sia nell'API (<code>api/src/test</code>).</p>
+
+<!-- ============================================================ -->
+<h2 id="sicurezza">11. Sicurezza</h2>
+<ul>
+<li>Token JWT mai esposti al renderer; refresh token salvato solo come hash bcrypt e ruotato a ogni uso.</li>
+<li>IPC account accettato solo dal frame principale dell'app (<code>trusted()</code>); input IPC sempre validati.</li>
+<li>HTML di Steam convertito in testo nel main process; immagini accettate solo da <code>*.akamai.steamstatic.com</code> (coerente con la CSP).</li>
+<li>URL API: solo HTTPS (HTTP solo per localhost), nessun redirect seguito.</li>
+<li>OAuth con PKCE doppia, <code>state</code>, codici monouso brevi, collegamento account solo su email verificata.</li>
+<li>Nessun numero di serie raccolto durante la scansione.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="note">12. Note e problemi noti</h2>
+<div class="note">
+<ul>
+<li><code>api/src/build/build.controller.ts</code>: <code>CalcRam</code> e <code>CalcScore</code> chiamano se stessi (<code>this.CalcRam(ram)</code>) → ricorsione infinita; inoltre la rotta è scritta <code>"scrore"</code> invece di <code>"score"</code>. Dovrebbero chiamare <code>buildService.GetRamWithScore</code> e <code>GetBuildScore</code>.</li>
+<li><code>docs.md</code> e <code>api-contract.md</code> descrivono rotte (<code>steam/game/getAppByAppid</code>, <code>/build/get-cpu</code>) diverse da quelle attuali (<code>/steam/games/:appId</code>, <code>/build/cpu/:name</code>).</li>
+<li>Porta di default: l'API ascolta su 3000 se <code>PORT</code> non è impostata, ma l'app si aspetta 3636.</li>
+<li>Variabili <code>DATABSE_SYNC</code> / <code>DATABSE_LOGGING</code> con refuso nel nome.</li>
+<li>Credenziali MariaDB in chiaro in <code>docker-compose.yml</code> e <code>update_db.py</code>: adatte solo allo sviluppo locale.</li>
+<li>Il README punta al repository <code>Program-Inspector</code>, il sito a <code>Build-Inspector</code>.</li>
+</ul>
+</div>
+</main>
+</div>
+</body>
+</html>
