@@ -8,6 +8,7 @@ import {
 import { createAccountClient } from '../preload/auth/auth'
 import { historyChannels, isHistoryRecord, toHistoryEntry } from '../shared/history'
 import { favoritesChannels, isAppId, isAppIdList } from '../shared/favorites'
+import { registerServerIpc } from './serverSettings'
 
 export function registerAccountIpc(rendererUrl: string): void {
   const client = createAccountClient(undefined, { openBrowser: (url) => shell.openExternal(url) })
@@ -23,6 +24,7 @@ export function registerAccountIpc(rendererUrl: string): void {
     )
   }
   const refused = { ok: false, message: 'Richiesta account non valida.' }
+  registerServerIpc(trusted)
   const validLogin = (values?: SignInRequest): boolean =>
     typeof values?.email === 'string' && typeof values?.password === 'string'
   ipcMain.handle(accountChannels.getSession, (event) =>

@@ -4,6 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { accountChannels, type AccountApi } from '../shared/auth'
 import { historyChannels, type HistoryApi } from '../shared/history'
 import { favoritesChannels, type FavoritesApi } from '../shared/favorites'
+import { serverChannels, type ServerApi } from '../shared/server'
 import { IPC } from '@shared/types/ipc'
 import type { SteamApi } from '@shared/types/steam'
 import type { ScannerApi } from '@shared/types/scan'
@@ -42,7 +43,12 @@ const favorites: FavoritesApi = {
   add: (appIds) => ipcRenderer.invoke(favoritesChannels.add, appIds),
   remove: (appId) => ipcRenderer.invoke(favoritesChannels.remove, appId)
 }
-const api = { account, steam, scanner, hardware, history, favorites }
+const server: ServerApi = {
+  get: () => ipcRenderer.invoke(serverChannels.get),
+  test: (url) => ipcRenderer.invoke(serverChannels.test, url),
+  save: (url) => ipcRenderer.invoke(serverChannels.save, url)
+}
+const api = { account, steam, scanner, hardware, history, favorites, server }
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

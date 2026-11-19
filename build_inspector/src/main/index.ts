@@ -5,6 +5,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerIpc } from '../preload/ipc'
 import { registerAccountIpc } from './accountIpc'
+import { loadServerUrl } from './serverSettings'
 
 const rendererUrl =
   (is.dev && process.env['ELECTRON_RENDERER_URL']) ||
@@ -38,8 +39,10 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Before anything talks to the API.
+  loadServerUrl()
   registerIpc()
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.nighthvnter.buildinspector')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

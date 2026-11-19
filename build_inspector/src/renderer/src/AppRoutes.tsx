@@ -8,6 +8,7 @@ import { Library } from './library'
 import { HomePage } from './home'
 import { CompareGame } from './compare'
 import { HistoryPage } from './history'
+import { SettingsPage } from './settings'
 import { PostRegistrazione } from './post-registrazione'
 import { useAuth } from './hooks/useAuth'
 
@@ -34,6 +35,7 @@ export function AppRoutes({
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/registrazione" element={<AuthPage mode="register" />} />
         <Route path="/recupera-password" element={<AuthPage mode="recovery" />} />
+        <Route path="/impostazioni" element={<SettingsPage />} />
         <Route element={<ProtectedRoute />}>
           <Route
             path="/preferiti"

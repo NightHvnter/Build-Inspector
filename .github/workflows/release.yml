@@ -1,0 +1,82 @@
+# Builds the desktop app on Windows, macOS and Linux and publishes a GitHub release.
+# Start it by pushing a version tag:  git tag v1.0.0 && git push origin v1.0.0
+name: Release app
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win
+          - os: macos-latest
+            target: --mac
+          - os: ubuntu-latest
+            target: --linux
+    defaults:
+      run:
+        working-directory: build_inspector
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: build_inspector/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        if: matrix.os == 'ubuntu-latest'
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Package
+        run: npx electron-builder ${{ matrix.target }} --publish never
+        env:
+          # No signing certificates on the runners: build unsigned (ad-hoc on macOS).
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            build_inspector/dist/Build-Inspector-Setup.exe
+            build_inspector/dist/Build-Inspector-macOS.dmg
+            build_inspector/dist/Build-Inspector-Linux.AppImage
+            build_inspector/dist/Build-Inspector-Linux.deb
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Build Inspector ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/*

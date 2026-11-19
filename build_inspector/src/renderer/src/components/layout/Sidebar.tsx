@@ -19,7 +19,8 @@ const items = [
   { to: '/home', title: 'Home', icon: 'home' },
   { to: '/preferiti', title: 'Preferiti', icon: 'heart' },
   { to: '/configurazione', title: 'La mia build', icon: 'chip' },
-  { to: '/cronologia', title: 'Cronologia', icon: 'history' }
+  { to: '/cronologia', title: 'Cronologia', icon: 'history' },
+  { to: '/impostazioni', title: 'Impostazioni', icon: 'settings' }
 ] as const
 
 export function Sidebar({ onLogout }: { onLogout: () => void }): JSX.Element {
