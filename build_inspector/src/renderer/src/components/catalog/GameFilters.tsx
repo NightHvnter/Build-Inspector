@@ -56,7 +56,7 @@ export function GameFilters({
           onChange={(event) => onChange({ sort: event.target.value })}
           sx={{ width: { xs: '100%', sm: 190 }, flexShrink: 0 }}
         >
-          <MenuItem value="featured">In evidenza</MenuItem>
+          <MenuItem value="featured">Più giocati</MenuItem>
           <MenuItem value="alphabetical">Nome A–Z</MenuItem>
         </TextField>
       </Stack>

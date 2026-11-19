@@ -13,6 +13,13 @@ export function readPreference<T>(
     return fallback
   }
 }
+export function removePreference(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    // Nothing to do: the stale copy is harmless.
+  }
+}
 export function savePreference<T>(key: string, value: T): Result<T> {
   try {
     localStorage.setItem(key, JSON.stringify(value))

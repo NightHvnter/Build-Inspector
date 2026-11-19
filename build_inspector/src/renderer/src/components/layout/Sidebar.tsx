@@ -17,7 +17,6 @@ import { useAuth } from '../../hooks/useAuth'
 
 const items = [
   { to: '/home', title: 'Home', icon: 'home' },
-  { to: '/libreria', title: 'Esplora giochi', icon: 'grid' },
   { to: '/preferiti', title: 'Preferiti', icon: 'heart' },
   { to: '/configurazione', title: 'La mia build', icon: 'chip' },
   { to: '/cronologia', title: 'Cronologia', icon: 'history' }

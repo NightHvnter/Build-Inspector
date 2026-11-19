@@ -60,9 +60,16 @@ function SectionTitle({ title, count }: { title: string; count?: number }): JSX.
   )
 }
 
-export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }): JSX.Element {
+// embedded: shown inside another page (the home), so its title is a section heading.
+export function Library({
+  favoritesOnly = false,
+  embedded = false
+}: {
+  favoritesOnly?: boolean
+  embedded?: boolean
+}): JSX.Element {
   const { user } = useAuth()
-  const { favorites, error, toggleFavorite } = useFavorites(user?.id)
+  const { favorites, loading: favoritesLoading, error, toggleFavorite } = useFavorites(user?.id)
   const catalog = useCatalog(favorites, favoritesOnly)
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const navigate = useNavigate()
@@ -89,14 +96,18 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
   const split = searching && !favoritesOnly
   const total = catalog.games.length
   const genreFilter = catalog.genre !== catalog.genres[0] ? catalog.genre : null
-  const featuredTitle = catalog.fromChart ? 'Più giocati della settimana' : 'In evidenza'
+  const featuredTitle = 'Più giocati della settimana'
 
   return (
     <>
       <Box component="section" aria-labelledby="catalog-title">
         <Box sx={{ mb: 2.5 }}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
-            <Typography id="catalog-title" component="h1" variant="h4">
+            <Typography
+              id="catalog-title"
+              component={embedded ? 'h2' : 'h1'}
+              variant={embedded ? 'h5' : 'h4'}
+            >
               {favoritesOnly ? 'I tuoi preferiti' : 'Catalogo giochi'}
             </Typography>
             <Chip
@@ -112,14 +123,19 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
           <Typography color="text.secondary" variant="body2">
             {favoritesOnly
               ? 'I giochi che hai salvato con il cuore.'
-              : catalog.fromChart
-                ? 'I giochi più giocati su Steam negli ultimi 7 giorni. Cerca qualsiasi altro gioco Steam, o aprine uno per vederne i requisiti.'
-                : 'Cerca qualsiasi gioco Steam, o scegli tra quelli in evidenza. Apri un gioco per vederne i requisiti.'}
+              : genreFilter
+                ? `I giochi ${genreFilter} più giocati su Steam negli ultimi 7 giorni.`
+                : 'I giochi più giocati su Steam negli ultimi 7 giorni. Scegli un genere per vedere i più giocati di quel tipo, o cerca qualsiasi gioco Steam.'}
           </Typography>
         </Box>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+        {catalog.featuredError && !(catalog.featuredLoading || (searching && !favoritesOnly)) && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {catalog.featuredError}
           </Alert>
         )}
         {catalog.steamError && (
@@ -170,7 +186,10 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
           )}
         </Stack>
 
-        {total === 0 && !catalog.steamLoading && !catalog.featuredLoading ? (
+        {total === 0 &&
+        !catalog.steamLoading &&
+        !catalog.featuredLoading &&
+        !(favoritesOnly && favoritesLoading) ? (
           <EmptyState
             icon={favoritesOnly && !catalog.hasFilters ? 'heart' : 'search'}
             title={
@@ -182,7 +201,7 @@ export function Library({ favoritesOnly = false }: { favoritesOnly?: boolean }):
               favoritesOnly && !catalog.hasFilters
                 ? 'Usa il cuore nel catalogo per salvare un gioco.'
                 : genreFilter
-                  ? 'Nessun gioco in evidenza di questo genere. Prova un altro genere o cerca un titolo.'
+                  ? 'Nessun gioco di questo genere tra i più giocati della settimana. Prova un altro genere o cerca un titolo.'
                   : 'Prova con un altro titolo: la ricerca include tutti i giochi Steam.'
             }
             onReset={catalog.hasFilters ? catalog.resetFilters : undefined}

@@ -99,7 +99,7 @@ export function HistoryPage(): JSX.Element {
       {!loading && !error && entries.length === 0 && (
         <EmptyState
           title="Nessun confronto salvato."
-          description="Apri un gioco nella libreria e usa “Confronta con il mio PC”: il risultato comparirà qui."
+          description="Apri un gioco dalla Home e usa “Confronta con il mio PC”: il risultato comparirà qui."
         />
       )}
 

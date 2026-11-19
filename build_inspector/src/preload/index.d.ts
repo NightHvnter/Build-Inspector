@@ -1,6 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { AccountApi } from '../shared/auth'
 import type { HistoryApi } from '../shared/history'
+import type { FavoritesApi } from '../shared/favorites'
 import type { SteamApi } from './shared/types/steam'
 import type { ScannerApi } from './shared/types/scan'
 import type { HardwareApi } from './shared/types/hardware'
@@ -14,6 +15,7 @@ declare global {
       scanner?: ScannerApi
       hardware?: HardwareApi
       history?: HistoryApi
+      favorites?: FavoritesApi
     }
   }
 }

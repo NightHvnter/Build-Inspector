@@ -20,9 +20,9 @@ import {
 import type { JSX } from 'react'
 import { Link } from 'react-router-dom'
 import type { ScannedPc } from '@shared/types/scan'
-import type { RequirementKind, RequirementRow } from '@shared/types/steam'
+import type { RequirementKind } from '@shared/types/steam'
 import type { Game } from '../../games'
-import { steamAppId, useGameRequirements } from '../../hooks/useGameRequirements'
+import { useGameRequirements } from '../../hooks/useGameRequirements'
 import { usePcScan } from '../../hooks/usePcScan'
 import { useAuth } from '../../hooks/useAuth'
 import { authLink } from '../../utils/authNavigation'
@@ -54,27 +54,11 @@ function ramVerdict(minimumGb: number | null, pc: ScannedPc | null): JSX.Element
   )
 }
 
-// The catalog's own demo values, used when Steam has no requirements for the game.
-function demoRows(game: Game): RequirementRow[] {
-  return [
-    { kind: 'cpu', label: 'Processore', value: game.reqCpu },
-    { kind: 'gpu', label: 'Scheda video', value: game.reqGpu },
-    { kind: 'ram', label: 'Memoria', value: game.reqRam ? game.reqRam + ' GB' : '' }
-  ].filter((row): row is RequirementRow => !!row.value)
-}
-
 function RequirementsSection({ game }: { game: Game }): JSX.Element {
-  const appId = steamAppId(game)
-  const steam = useGameRequirements(appId)
+  const steam = useGameRequirements(game.id)
   const scan = usePcScan(true)
-  const fromSteam = !!steam.requirements?.minimum.length
-  const rows =
-    fromSteam && steam.requirements
-      ? steam.requirements.minimum
-      : steam.loading
-        ? []
-        : demoRows(game)
-  const minimumRamGb = fromSteam ? (steam.requirements?.ramGb ?? null) : game.reqRam || null
+  const rows = steam.requirements?.minimum ?? []
+  const minimumRamGb = steam.requirements?.ramGb ?? null
 
   return (
     <>
@@ -108,10 +92,9 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
       {steam.error && (
         <Alert severity="warning" sx={{ mb: 1 }}>
           {steam.error}
-          {rows.length > 0 && ' Mostro i dati dimostrativi del catalogo.'}
         </Alert>
       )}
-      {!steam.loading && !steam.error && !fromSteam && rows.length === 0 && (
+      {!steam.loading && !steam.error && rows.length === 0 && (
         <Alert severity="info" sx={{ mb: 1 }}>
           Steam non indica requisiti minimi per questo gioco.
         </Alert>
@@ -145,9 +128,7 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
         </Table>
       )}
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-        {fromSteam
-          ? 'Requisiti da Steam. La RAM è confrontata con la scansione del tuo PC.'
-          : 'Dati dimostrativi: verifica i requisiti ufficiali prima di acquistare un gioco.'}
+        Requisiti da Steam. La RAM è confrontata con la scansione del tuo PC.
       </Typography>
     </>
   )
@@ -156,9 +137,7 @@ function RequirementsSection({ game }: { game: Game }): JSX.Element {
 // The comparison page needs an account: guests are sent to log in, then on to the page.
 function CompareButton({ game, onClose }: { game: Game; onClose: () => void }): JSX.Element | null {
   const { user } = useAuth()
-  const appId = steamAppId(game)
-  if (appId === null) return null
-  const page = '/confronto/' + appId
+  const page = '/confronto/' + game.id
   return (
     <Button
       component={Link}
@@ -198,14 +177,14 @@ export function GameDetails({
             </IconButton>
           </DialogTitle>
           <DialogContent>
-            <GameCover key={game.id} game={game} />
+            <GameCover key={'cover-' + game.id} game={game} />
             <Typography sx={{ my: 2 }}>{game.description}</Typography>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
               {game.genre.map((genre) => (
                 <Chip key={genre} label={genre} size="small" variant="outlined" />
               ))}
             </Stack>
-            <RequirementsSection key={game.id} game={game} />
+            <RequirementsSection key={'requirements-' + game.id} game={game} />
           </DialogContent>
           <DialogActions sx={{ p: 2, flexWrap: 'wrap', gap: 1 }}>
             <Button
@@ -213,7 +192,10 @@ export function GameDetails({
               onClick={onFavorite}
               aria-pressed={favorite}
               startIcon={
-                <Box component="span" sx={{ display: 'flex', color: favorite ? FAVORITE_RED : 'inherit' }}>
+                <Box
+                  component="span"
+                  sx={{ display: 'flex', color: favorite ? FAVORITE_RED : 'inherit' }}
+                >
                   <Icon name="heart" size={18} filled={favorite} />
                 </Box>
               }

@@ -1,4 +1,4 @@
-import { parseGameDetails, rankOverDays, type ChartRow } from '../steam/steam-charts.service.js';
+import { SteamChartsService, rankOverDays, type ChartRow } from '../steam/steam-charts.service.js';
 
 const DAYS = ['2026-11-17', '2026-11-16', '2026-11-15'];
 
@@ -36,34 +36,71 @@ describe('rankOverDays', () => {
   });
 });
 
-describe('parseGameDetails', () => {
-  const GAME = {
-    type: 'game',
-    name: 'Counter-Strike 2 ',
-    short_description: 'Per oltre due decenni, <b>Counter-Strike</b> &egrave; &quot;competitivo&quot;.',
-    genres: [
-      { id: '1', description: 'Azione' },
-      { id: '37', description: 'Free-to-Play' },
-    ],
-    header_image: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/header.jpg?t=1',
-  };
+describe('SteamChartsService by genre', () => {
+  const app = (appId: number, genres: string[], type = 0) => ({
+    appId,
+    type,
+    name: 'Gioco ' + appId,
+    description: '',
+    genres,
+    image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`,
+  });
+  // Ranked 1 to 5 on a single day.
+  const APPS = [
+    app(1, ['Azione', 'Free-to-Play']),
+    app(2, ['Strategia']),
+    app(3, ['Azione'], 4), // DLC
+    app(4, ['Azione', 'GDR']),
+    app(5, ['GDR']),
+  ];
 
-  it('keeps the name, plain-text description, genres and cover of a game', () => {
-    expect(parseGameDetails(GAME)).toEqual({
-      name: 'Counter-Strike 2',
-      description: 'Per oltre due decenni, Counter-Strike è "competitivo".',
-      genres: ['Azione', 'Free-to-Play'],
-      image: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/header.jpg?t=1',
-    });
+  function service() {
+    const days = {
+      createQueryBuilder: () => ({
+        select: function () { return this; },
+        orderBy: function () { return this; },
+        limit: function () { return this; },
+        getRawMany: async () => [{ Day: '2026-11-18' }],
+      }),
+      find: async () => APPS.map((a, i) => ({ Day: '2026-11-18', AppId: a.appId, Rank: i + 1 })),
+    };
+    const details = {
+      get: vitest.fn(async (id: number) => APPS.find((a) => a.appId === id) ?? null),
+      getMany: vitest.fn(async (ids: number[]) => ids.map((id) => APPS.find((a) => a.appId === id)!)),
+    };
+    const charts = new SteamChartsService(days as never, details as never);
+    // Pretend today's chart is already saved, so nothing is fetched from Steam.
+    (charts as unknown as { lastSave: number }).lastSave = Date.now();
+    return { charts, details };
+  }
+
+  it('keeps chart order and only the games of the genre, leaving out DLC', async () => {
+    const { charts } = service();
+    const games = await charts.topGames(6, 'azione');
+    expect(games.map((g) => g.appId)).toEqual([1, 4]);
+    expect(await charts.topGames(1, 'GDR')).toMatchObject([{ appId: 4 }]);
+    expect(await charts.topGames(6, 'Sport')).toEqual([]);
   });
 
-  it('leaves out tools, DLC and covers from elsewhere', () => {
-    // Wallpaper Engine is "type: game" on Steam, but in software genres.
-    expect(
-      parseGameDetails({ ...GAME, name: 'Wallpaper Engine', genres: [{ id: '4' }, { id: '51' }, { id: '53' }] }),
-    ).toBeNull();
-    expect(parseGameDetails({ ...GAME, type: 'dlc' })).toBeNull();
-    expect(parseGameDetails({ ...GAME, header_image: 'https://evil.example/header.jpg' })).toBeNull();
-    expect(parseGameDetails(null)).toBeNull();
+  it('counts the genres of the charted games, the most common first', async () => {
+    const { charts } = service();
+    expect(await charts.topGenres()).toEqual([
+      { name: 'Azione', games: 2 },
+      { name: 'GDR', games: 2 },
+      { name: 'Free-to-Play', games: 1 },
+      { name: 'Strategia', games: 1 },
+    ]);
+  });
+
+  it('asks for the chart details once an hour, however many genres are opened', async () => {
+    const { charts, details } = service();
+    await Promise.all([charts.topGames(6, 'Azione'), charts.topGames(6, 'GDR'), charts.topGenres()]);
+    expect(details.getMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('without a genre gives the first games of the chart', async () => {
+    const { charts, details } = service();
+    expect((await charts.topGames(2)).map((g) => g.appId)).toEqual([1, 2]);
+    expect(details.getMany).toHaveBeenCalledTimes(1);
   });
 });

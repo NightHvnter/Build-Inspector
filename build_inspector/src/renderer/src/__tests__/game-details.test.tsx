@@ -25,7 +25,7 @@ beforeEach(() => {
   resetPcScanCache()
   window.api = {
     account: {} as never,
-    steam: { search: vi.fn(), requirements, top: vi.fn() },
+    steam: { search: vi.fn(), requirements, top: vi.fn(), topGenres: vi.fn(), details: vi.fn() },
     scanner: { scan }
   }
 })

@@ -1,14 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { GameRequirements } from '@shared/types/steam'
-import type { Game } from '../games'
-
-// The Steam app id of a catalog game, read from its Steam cover address.
-export function steamAppId(game: Game): number | null {
-  const match = /\/steam\/apps\/(\d+)\//.exec(game.image)
-  const id = match ? Number(match[1]) : NaN
-  return Number.isSafeInteger(id) && id > 0 ? id : null
-}
-
 interface RequirementsState {
   requirements: GameRequirements | null
   loading: boolean

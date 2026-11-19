@@ -18,10 +18,6 @@ export function steamGame(appId: number, name: string): Game {
     image: steamCover(appId),
     genre: [],
     description: 'Risultato della ricerca su Steam.',
-    reqCpu: '',
-    reqGpu: '',
-    reqRam: 0,
-    baseFps: 0,
     fromSteamSearch: true
   }
 }

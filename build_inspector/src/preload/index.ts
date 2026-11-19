@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 import { accountChannels, type AccountApi } from '../shared/auth'
 import { historyChannels, type HistoryApi } from '../shared/history'
+import { favoritesChannels, type FavoritesApi } from '../shared/favorites'
 import { IPC } from '@shared/types/ipc'
 import type { SteamApi } from '@shared/types/steam'
 import type { ScannerApi } from '@shared/types/scan'
@@ -20,7 +21,9 @@ const account: AccountApi = {
 const steam: SteamApi = {
   search: (term) => ipcRenderer.invoke(IPC.steamSearch, term),
   requirements: (appId) => ipcRenderer.invoke(IPC.steamRequirements, appId),
-  top: () => ipcRenderer.invoke(IPC.steamTop)
+  top: (genre) => ipcRenderer.invoke(IPC.steamTop, genre),
+  topGenres: () => ipcRenderer.invoke(IPC.steamTopGenres),
+  details: (appIds) => ipcRenderer.invoke(IPC.steamDetails, appIds)
 }
 const scanner: ScannerApi = {
   scan: () => ipcRenderer.invoke(IPC.scan)
@@ -34,7 +37,12 @@ const history: HistoryApi = {
   remove: (id) => ipcRenderer.invoke(historyChannels.remove, id),
   clear: () => ipcRenderer.invoke(historyChannels.clear)
 }
-const api = { account, steam, scanner, hardware, history }
+const favorites: FavoritesApi = {
+  list: () => ipcRenderer.invoke(favoritesChannels.list),
+  add: (appIds) => ipcRenderer.invoke(favoritesChannels.add, appIds),
+  remove: (appId) => ipcRenderer.invoke(favoritesChannels.remove, appId)
+}
+const api = { account, steam, scanner, hardware, history, favorites }
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

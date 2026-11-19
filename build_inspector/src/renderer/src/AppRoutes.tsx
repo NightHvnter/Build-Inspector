@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
 import { Box, Button, Typography, type PaletteMode } from '@mui/material'
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { AuthPage } from './Login'
@@ -10,6 +10,11 @@ import { CompareGame } from './compare'
 import { HistoryPage } from './history'
 import { PostRegistrazione } from './post-registrazione'
 import { useAuth } from './hooks/useAuth'
+
+function LibraryRedirect(): JSX.Element {
+  const { search } = useLocation()
+  return <Navigate to={{ pathname: '/home', search }} replace />
+}
 
 export function AppRoutes({
   mode,
@@ -23,8 +28,9 @@ export function AppRoutes({
     <Routes>
       <Route element={<AppLayout mode={mode} toggleTheme={toggleTheme} />}>
         <Route index element={<Navigate to="/home" replace />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/libreria" element={<Library key={'catalog-' + (user?.id ?? 'guest')} />} />
+        <Route path="/home" element={<HomePage key={'home-' + (user?.id ?? 'guest')} />} />
+        {/* The catalog lives on the home now; old links keep their search and filters. */}
+        <Route path="/libreria" element={<LibraryRedirect />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/registrazione" element={<AuthPage mode="register" />} />
         <Route path="/recupera-password" element={<AuthPage mode="recovery" />} />
@@ -47,8 +53,8 @@ export function AppRoutes({
               <Typography variant="h4" component="h1" gutterBottom>
                 Pagina non trovata
               </Typography>
-              <Button component={Link} to="/libreria">
-                Torna alla libreria
+              <Button component={Link} to="/home">
+                Torna alla home
               </Button>
             </Box>
           }

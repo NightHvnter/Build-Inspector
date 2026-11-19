@@ -7,6 +7,7 @@ import {
 } from '../shared/auth'
 import { createAccountClient } from '../preload/auth/auth'
 import { historyChannels, isHistoryRecord, toHistoryEntry } from '../shared/history'
+import { favoritesChannels, isAppId, isAppIdList } from '../shared/favorites'
 
 export function registerAccountIpc(rendererUrl: string): void {
   const client = createAccountClient(undefined, { openBrowser: (url) => shell.openExternal(url) })
@@ -84,5 +85,23 @@ export function registerAccountIpc(rendererUrl: string): void {
     if (!trusted(event)) return refused
     const reply = await client.authorized('DELETE', '/history')
     return reply.ok ? { ok: true, data: null } : reply
+  })
+
+  // Favourite games: every route replies with the whole list of app ids.
+  const favoritesReply = (reply: { ok: boolean; data?: unknown }): unknown => {
+    if (!reply.ok) return reply
+    return isAppIdList(reply.data) ? { ok: true, data: reply.data } : refused
+  }
+  ipcMain.handle(favoritesChannels.list, async (event) => {
+    if (!trusted(event)) return refused
+    return favoritesReply(await client.authorized('GET', '/favorites'))
+  })
+  ipcMain.handle(favoritesChannels.add, async (event, appIds: unknown) => {
+    if (!trusted(event) || !isAppIdList(appIds) || !appIds.length) return refused
+    return favoritesReply(await client.authorized('POST', '/favorites', { AppIds: appIds }))
+  })
+  ipcMain.handle(favoritesChannels.remove, async (event, appId: unknown) => {
+    if (!trusted(event) || !isAppId(appId)) return refused
+    return favoritesReply(await client.authorized('DELETE', '/favorites/' + appId))
   })
 }

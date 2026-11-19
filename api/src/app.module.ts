@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SteamModule } from './steam/steam.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { HistoryModule } from './history/history.module.js';
+import { FavoritesModule } from './favorites/favorites.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true, envFilePath: ".env"}),
@@ -34,7 +35,8 @@ import { HistoryModule } from './history/history.module.js';
     BuildModule,
     SteamModule,
     AuthModule,
-    HistoryModule
+    HistoryModule,
+    FavoritesModule
   ],
   controllers: [],
   providers: [],

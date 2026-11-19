@@ -8,5 +8,7 @@ export const IPC = {
   steamSearch: 'steam:search',
   steamRequirements: 'steam:requirements',
   steamTop: 'steam:top',
+  steamTopGenres: 'steam:topGenres',
+  steamDetails: 'steam:details',
   hardwareCatalog: 'hardware:catalog'
 } as const
