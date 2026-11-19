@@ -1,5 +1,24 @@
 import json
+import os
+from pathlib import Path
+
 import pymysql
+
+
+def read_env():
+    # Le credenziali arrivano dalle variabili d'ambiente o dal file .env nella root del progetto.
+    env = {}
+    path = Path(__file__).resolve().parent.parent / ".env"
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                env[key.strip()] = value.strip().strip('"').strip("'")
+    env.update(os.environ)
+    if not env.get("MYSQL_ROOT_PASSWORD"):
+        raise SystemExit("Imposta MYSQL_ROOT_PASSWORD nel file .env (vedi .env.example).")
+    return env
 
 def load_to_mariadb():
     # 1. Legge il file JSON pulito
@@ -7,11 +26,12 @@ def load_to_mariadb():
         data = json.load(f)
 
     # 2. Connessione a MariaDB (Docker)
+    env = read_env()
     connection = pymysql.connect(
-        host="localhost",
+        host=env.get("MYSQL_HOST", "localhost"),
         user="root",
-        password="root_password_segreta",  # Sostituisci con la tua password
-        database="build_inspector",
+        password=env["MYSQL_ROOT_PASSWORD"],
+        database=env.get("MYSQL_DATABASE", "build_inspector"),
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor
     )

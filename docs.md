@@ -1,132 +1,61 @@
-
 # Build Inspector API Documentation
-## PC Build
 
-| Endpoint         	| Method 	| Header       	| Parameter                                      	| Request Body                                                                                               	| Response Type 	| Responses                                                                     	| Status Codes       	| Description                                      	|
-|------------------	|--------	|--------------	|------------------------------------------------	|------------------------------------------------------------------------------------------------------------	|---------------	|-------------------------------------------------------------------------------	|--------------------	|--------------------------------------------------	|
-| cpu/get/{id}     	| GET    	| Auth: bearer 	| id: int \| string                              	| -                                                                                                          	| JSON          	| 200: obj, 401: null, 404: null                                                	| 200, 401, 404      	|                                                  	|
-| build/cpu/{name} 	| GET    	| Auth: bearer 	| name: string                                   	| -                                                                                                          	| JSON          	| 200: obj, 401: null, 404: null                                                	| 200, 401, 404      	| name match: partial                              	|
-| gpu/get/{id}     	| GET    	| Auth: bearer 	| id: int \| string                              	| -                                                                                                          	| JSON          	| 200: obj, 401: null, 404: null                                                	| 200, 401, 404      	|                                                  	|
-| build/gpu/{name} 	| GET    	| Auth: bearer 	| name: string                                   	| -                                                                                                          	| JSON          	| 200: obj, 401: null, 404: null                                                	| 200, 401, 404      	| name match: partial                              	|
-| build/ram/calc   	| POST   	| Auth: bearer 	| Name, CapacityGb, ClockSpeedMHz, Latency, Type 	| Name: string, CapacityGb: number, ClockSpeedMHz: number, Latency: string, Type: "DDR5" \| "DDR4" \| "DDR3" 	| JSON          	| 200: int, 400: null, 401: null                                                	| 200, 400, 401      	|                                                  	|
-| build/score      	| POST   	| Auth: bearer 	| Gpu, Cpu, Ram                                  	| Gpu: string, Cpu: string, Ram: RamDto                                                                      	| JSON          	| 200: {score: int, message string}, 400, 401, 404: {score: 0, message: string} 	| 200, 400, 401, 404 	| name match: partial - return type: BuildResponse 	|
----
-Per maggiori informazioni rivolgersi al sottoscritto
+Base URL (sviluppo): `http://localhost:3636`. Documentazione Swagger su `/api`.
+
+Le rotte con **JWT** richiedono l'header `Authorization: Bearer <accessToken>`.
+
+## Hardware
+
+| Endpoint | Metodo | Auth | Parametri | Risposta |
+|---|---|---|---|---|
+| `/cpu` | GET | - | - | `200`: tutte le CPU `{ Name, Mark }[]`, ordinate per nome |
+| `/cpu/get/:id` | GET | - | `id`: int | `200`: CPU `{ id, Name, Mark, Cores, Socket }`, corpo vuoto se non esiste |
+| `/gpu` | GET | - | - | `200`: tutte le GPU `{ Name, Mark }[]`, ordinate per nome |
+| `/gpu/get/:id` | GET | - | `id`: int | `200`: GPU `{ id, Name, Mark }`, corpo vuoto se non esiste |
+| `/build/cpu/:name` | GET | - | `name`: string (match parziale) | `200`: prima CPU trovata |
+| `/build/gpu/:name` | GET | - | `name`: string (match parziale) | `200`: prima GPU trovata |
+| `/build/ram/calc` | POST | - | body `{ ram: RamDto }` | `200`: `RamDto` + `Mark` |
+| `/build/score` | POST | - | body `BuildDto` | `200`: `{ Cpu, Gpu, Ram }` (punteggi) |
+
+```
+RamDto   { Name: string, CapacityGb: number, ClockSpeedMHz: number, Latency: string, Type: "DDR3" | "DDR4" | "DDR5" }
+BuildDto { cpu: string, gpu: string, ram: RamDto }
+```
+
 ## Steam
-| Endpoint                            	| Method 	| Header 	| Parameter            	| Request Body 	| Responses                           	| Status Codes 	| Description 	|
-|-------------------------------------	|--------	|--------	|----------------------	|--------------	|-------------------------------------	|--------------	|-------------	|
-| steam/game/getAppByAppid/:appid     	| GET    	| -      	| appid: int \| string 	| -            	| 200: GameDto[], 404: null           	| 200, 404     	| -           	|
-| steam/game/getAppByAppName/:appname 	| GET    	| -      	| appname: string      	| -            	| 200: GameDto[], 404: null           	| 200, 404     	| -           	|
-| steam/game/requirements/:appid      	| GET    	| -      	| appid: int \| string 	| -            	| 200: GameRequirementsDto, 404: null 	| 200, 404     	| -           	|
 
-```
-GameDto {
-	type: string;
-	name: string;
-	steam_appid: number;
-	required_age: number;
-	is_free: boolean;
-	dlc: number[];
-	detailed_description: string;
-	about_the_game: string;
-	short_description: string;
-	supported_languages: string;
-	header_image: string;
-	capsule_image: string;
-	capsule_imagev5: string;
-	website: string;
-	pc_requirements: {
-		minimum: string;
-	};
-	mac_requirements: {
-		minimum: string;
-	};
-	linux_requirements: {
-			minimum: string;
-	};
-	developers: string[];
-	publishers: string[];
-	packages: number[];
-	package_groups: {
-		name: string;
-		title: string;
-		description: string;
-		selection_text: string;
-		save_text: string;
-		display_type: number;
-		is_recurring_subscription: string;
-		subs: {
-			packageid: number;
-			percent_savings_text: string;
-			percent_savings: number;
-			option_text: string;
-			option_description: string;
-			can_get_free_license: string;
-			is_free_license: boolean;
-			price_in_cents_with_discount: number;
-		}[];
-	}[];
-	platforms: {
-		windows: boolean;
-		mac: boolean;
-		linux: boolean;
-	};
-	categories: {
-		id: number;
-		description: string;
-	}[];
-	genres: {
-		id: string;
-		description: string;
-	}[];
-	screenshots: {
-		id: number;
-		path_thumbnail: string;
-		path_full: string;
-	}[];
-	movies: {
-		id: number;
-		name: string;
-		thumbnail: string;
-		dash_av1: string;
-		dash_h264: string;
-		hls_h264: string;
-		highlight: boolean;
-	}[];
-	recommendations: {
-		total: number;
-	};
-	achievements: {
-		total: number;
-		highlighted: {
-			icon: string;
-			localized_name: string;
-			archived: number;
-			hidden: number;
-			name: string;
-			path: string;
-		}[];
-	};
-	release_date: {
-		coming_soon: boolean;
-		date: string;
-	}; support_info: {
-		url: string;
-		email: string;
-	};
-	background: string;
-	background_raw: string;
-	content_descriptors: {
-		ids: number[];
-		notes: string;
-		}; 
-	ratings: Record<string, {
-		rating: string;
-		descriptors?: string;
-		required_age?: string;
-		banned?: string;
-		use_age_gate?: string;
-		rating_generated?: string;
-	}>;
-}
-```
+| Endpoint | Metodo | Auth | Parametri | Risposta |
+|---|---|---|---|---|
+| `/steam/games/search` | GET | - | `q`: string | `200`: `{ appId, name, platform }[]` |
+| `/steam/games/:appId` | GET | - | `appId`: int | `200`: `{ type, name, steam_appid, short_description, header_image, pc_requirements, mac_requirements, linux_requirements, platforms }`, corpo vuoto se il gioco non esiste, `400` id non valido, `503` Steam non raggiungibile |
+| `/steam/games/top` | GET | - | `limit`: 1-24 (default 6), `genre`: string opzionale | `200`: `{ appId, name, description, genres, image, averageRank, days }[]` |
+| `/steam/games/top/genres` | GET | - | - | `200`: `{ name, games }[]` |
+| `/steam/games/details` | GET | - | `ids`: lista separata da virgole (max 100) | `200`: `{ appId, name, description, genres, image }[]` |
+
+I requisiti sono salvati nel database e richiesti di nuovo a Steam dopo 7 giorni.
+
+## Account
+
+| Endpoint | Metodo | Auth | Body | Risposta |
+|---|---|---|---|---|
+| `/auth/user` | POST | - | `{ Username, Email, Password }` | `201`: utente creato, `409` già in uso |
+| `/auth/user/:id` | GET | JWT | - | `200`: utente, `404` |
+| `/auth/user/:id` | PATCH | JWT | campi da modificare | `200` (solo il proprio utente, altrimenti `403`) |
+| `/auth/login` | POST | - | `{ Email, Password }` | `200`: `{ id, Username, Email, accessToken, refreshToken }`, `401` |
+| `/auth/refresh` | POST | - | `{ refreshToken }` | `200`: nuova coppia di token, `401` |
+| `/auth/logout` | POST | JWT | - | `204` |
+| `/auth/:provider/start` | GET | - | query `port`, `challenge`, `state` | redirect al provider (`google`, `discord`, `steam`) |
+| `/auth/:provider/callback` | GET | - | - | redirect all'app su `127.0.0.1` |
+| `/auth/oauth/exchange` | POST | - | `{ code, verifier }` | `200`: come `/auth/login`, `401` |
+
+## Cronologia e preferiti
+
+| Endpoint | Metodo | Auth | Body | Risposta |
+|---|---|---|---|---|
+| `/history` | GET | JWT | - | `200`: ultime 100 voci |
+| `/history` | POST | JWT | `{ AppId, GameName, CpuName, GpuName, RamGb, Met, Failed, ToCheck }` | `201`: voce salvata |
+| `/history/:id` | DELETE | JWT | - | `204`, `404` |
+| `/history` | DELETE | JWT | - | `204`: cronologia svuotata |
+| `/favorites` | GET | JWT | - | `200`: `number[]` (app id) |
+| `/favorites` | POST | JWT | `{ AppIds: number[] }` | `200`: lista aggiornata, `400` oltre 500 preferiti |
+| `/favorites/:appId` | DELETE | JWT | - | `200`: lista aggiornata |

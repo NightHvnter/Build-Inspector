@@ -4,10 +4,11 @@ services:
     container_name: mariadb_container
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root_password_segreta
-      MYSQL_DATABASE: build_inspector
-      MYSQL_USER: app_user
-      MYSQL_PASSWORD: app_password
+      # Valori letti dal file .env nella root del progetto (vedi .env.example).
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Imposta MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-build_inspector}
+      MYSQL_USER: ${MYSQL_USER:?Imposta MYSQL_USER in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Imposta MYSQL_PASSWORD in .env}
     ports:
       - '3306:3306'
     volumes:

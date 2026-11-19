@@ -23,8 +23,9 @@ import { FavoritesModule } from './favorites/favorites.module.js';
         password: configService.get<string>("DATABASE_USER_PASSWORD"),
         database: configService.get<string>("DATABASE_NAME"),
         autoLoadEntities: configService.get<boolean>("DATABASE_AUTOLOAD_ENTITIES"),
-        synchronize: configService.get<boolean>("DATABSE_SYNC"),
-        logging: configService.get<boolean>("DATABSE_LOGGING"),
+        // DATABSE_* is the old, misspelled name: still read so existing .env files keep working.
+        synchronize: configService.get<boolean>("DATABASE_SYNC") ?? configService.get<boolean>("DATABSE_SYNC"),
+        logging: configService.get<boolean>("DATABASE_LOGGING") ?? configService.get<boolean>("DATABSE_LOGGING"),
         // The MariaDB container runs in UTC and fills created_at/updated_at itself:
         // read and write dates as UTC too, or they come back an hour or two off.
         timezone: "Z"

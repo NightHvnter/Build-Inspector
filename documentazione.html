@@ -116,7 +116,7 @@ svg text{font-family:system-ui,sans-serif}
 <div class="grid">
   <div class="card"><h4>App desktop</h4><p><span class="tag">Electron</span><span class="tag">React 19</span><span class="tag">MUI</span></p><p>Cartella <code>build_inspector/</code>. Interfaccia utente, scansione hardware, motore di confronto e consigli.</p></div>
   <div class="card"><h4>API</h4><p><span class="tag">NestJS</span><span class="tag">TypeORM</span></p><p>Cartella <code>api/</code>. Proxy/cache verso Steam, catalogo CPU/GPU, account, cronologia, preferiti.</p></div>
-  <div class="card"><h4>Database</h4><p><span class="tag">MariaDB</span><span class="tag">Docker</span></p><p><code>docker-compose.yml</code>. Tabelle hardware, utenti, cache Steam, classifiche.</p></div>
+  <div class="card"><h4>Database</h4><p><span class="tag">MariaDB</span><span class="tag">Docker</span></p><p><code>docker-compose.yml</code> (credenziali da <code>.env</code>). Tabelle hardware, utenti, cache Steam, classifiche.</p></div>
   <div class="card"><h4>Dati &amp; sito</h4><p><span class="tag">Python</span><span class="tag">Vite</span></p><p><code>script/</code> scarica i benchmark PassMark; <code>web/</code> è il sito di download.</p></div>
 </div>
 
@@ -184,7 +184,10 @@ svg text{font-family:system-ui,sans-serif}
 
 <!-- ============================================================ -->
 <h2 id="avvio">4. Avvio in locale</h2>
-<pre><code># 1. Database
+<pre><code># 0. Credenziali del database
+cp .env.example .env   # poi scegli le password
+
+# 1. Database
 docker compose up -d
 
 # 2. Popolare CPU/GPU (richiede playwright + bs4 + pymysql)
@@ -199,10 +202,10 @@ cd build_inspector &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
 <div class="tw"><table>
 <tr><th>Variabile</th><th>Uso</th></tr>
 <tr><td><code>DATABASE_TYPE/HOST/PORT/USER/USER_PASSWORD/NAME</code></td><td>Connessione TypeORM a MariaDB.</td></tr>
-<tr><td><code>DATABASE_AUTOLOAD_ENTITIES</code>, <code>DATABSE_SYNC</code>, <code>DATABSE_LOGGING</code></td><td>Opzioni TypeORM (nota il refuso "DATABSE" nel codice).</td></tr>
+<tr><td><code>DATABASE_AUTOLOAD_ENTITIES</code>, <code>DATABASE_SYNC</code>, <code>DATABASE_LOGGING</code></td><td>Opzioni TypeORM (i vecchi nomi <code>DATABSE_*</code> sono ancora accettati).</td></tr>
 <tr><td><code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code></td><td>Firme dei token (obbligatorie).</td></tr>
 <tr><td><code>JWT_ACCESS_EXPIRES</code>, <code>JWT_REFRESH_EXPIRES</code></td><td>Durate, default <code>15m</code> e <code>7d</code>.</td></tr>
-<tr><td><code>PORT</code></td><td>Porta HTTP (default 3000; l'app si aspetta 3636).</td></tr>
+<tr><td><code>PORT</code></td><td>Porta HTTP (default 3636, quella che l'app si aspetta).</td></tr>
 <tr><td>Credenziali OAuth Google/Discord, <code>STEAM_API_KEY</code></td><td>Login esterni (Steam key opzionale, solo per il nome visualizzato).</td></tr>
 </table></div>
 <p>L'app sceglie l'indirizzo dell'API in questo ordine: variabile <code>BUILD_INSPECTOR_API_URL</code> → valore salvato in <code>userData/server.json</code> (pagina Impostazioni) → default <code>http://localhost:3636</code>. HTTP è ammesso solo per localhost.</p>
@@ -400,6 +403,7 @@ gpuScore = 100 × (mark / mark_RTX4090) ^ 0.8</code></pre>
 <tr><td>GET</td><td><code>/cpu</code>, <code>/gpu</code></td><td>—</td><td>Catalogo completo con Mark PassMark.</td></tr>
 <tr><td>GET</td><td><code>/cpu/get/:id</code>, <code>/gpu/get/:id</code></td><td>—</td><td>Singolo componente.</td></tr>
 <tr><td>GET</td><td><code>/build/cpu/:name</code>, <code>/build/gpu/:name</code></td><td>—</td><td>Ricerca parziale (ILIKE).</td></tr>
+<tr><td>POST</td><td><code>/build/ram/calc</code>, <code>/build/score</code></td><td>—</td><td>Punteggio RAM; punteggi CPU, GPU e RAM di una build.</td></tr>
 <tr><td>POST</td><td><code>/auth/user</code></td><td>—</td><td>Registrazione.</td></tr>
 <tr><td>GET/PATCH</td><td><code>/auth/user/:id</code></td><td>JWT</td><td>Lettura/modifica utente (solo se stessi).</td></tr>
 <tr><td>POST</td><td><code>/auth/login</code>, <code>/auth/refresh</code></td><td>—</td><td>Login email/password, rinnovo token.</td></tr>
@@ -543,14 +547,15 @@ score = 0.4·Sv + 0.3·Sl + 0.3·Sc</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="note">12. Note e problemi noti</h2>
-<div class="note">
+<div class="tip">
+<p>I problemi trovati nella prima stesura di questa documentazione sono stati corretti:</p>
 <ul>
-<li><code>api/src/build/build.controller.ts</code>: <code>CalcRam</code> e <code>CalcScore</code> chiamano se stessi (<code>this.CalcRam(ram)</code>) → ricorsione infinita; inoltre la rotta è scritta <code>"scrore"</code> invece di <code>"score"</code>. Dovrebbero chiamare <code>buildService.GetRamWithScore</code> e <code>GetBuildScore</code>.</li>
-<li><code>docs.md</code> e <code>api-contract.md</code> descrivono rotte (<code>steam/game/getAppByAppid</code>, <code>/build/get-cpu</code>) diverse da quelle attuali (<code>/steam/games/:appId</code>, <code>/build/cpu/:name</code>).</li>
-<li>Porta di default: l'API ascolta su 3000 se <code>PORT</code> non è impostata, ma l'app si aspetta 3636.</li>
-<li>Variabili <code>DATABSE_SYNC</code> / <code>DATABSE_LOGGING</code> con refuso nel nome.</li>
-<li>Credenziali MariaDB in chiaro in <code>docker-compose.yml</code> e <code>update_db.py</code>: adatte solo allo sviluppo locale.</li>
-<li>Il README punta al repository <code>Program-Inspector</code>, il sito a <code>Build-Inspector</code>.</li>
+<li><code>build.controller.ts</code>: <code>CalcRam</code> e <code>CalcScore</code> ora chiamano <code>buildService.GetRamWithScore</code> e <code>GetBuildScore</code> (prima richiamavano se stessi all'infinito); la rotta <code>"scrore"</code> è diventata <code>/build/score</code>.</li>
+<li><code>docs.md</code> e <code>build_inspector/docs/api-contract.md</code> descrivono le rotte attuali.</li>
+<li>L'API ascolta sulla porta 3636 se <code>PORT</code> non è impostata, la stessa che l'app si aspetta.</li>
+<li>Le variabili si chiamano <code>DATABASE_SYNC</code> e <code>DATABASE_LOGGING</code>; i vecchi nomi <code>DATABSE_*</code> sono ancora letti per non rompere i file <code>.env</code> esistenti.</li>
+<li>Le credenziali MariaDB non sono più nel codice: <code>docker-compose.yml</code> e <code>script/update_db.py</code> le leggono dal file <code>.env</code> nella root (modello in <code>.env.example</code>).</li>
+<li>Il README punta al repository e al sito corretti.</li>
 </ul>
 </div>
 </main>

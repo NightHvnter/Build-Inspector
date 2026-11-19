@@ -19,11 +19,11 @@ export class BuildController {
 
     @Post("ram/calc")
     CalcRam(@Body("ram") ram: RamDto): RamDtoWithScore {
-        return this.CalcRam(ram);
+        return this.buildService.GetRamWithScore(ram);
     }
 
-    @Post("scrore")
-    CalcScore(@Body() build: BuildDto): Scores {
-        return this.CalcScore(build);
+    @Post("score")
+    CalcScore(@Body() build: BuildDto): Promise<Scores> {
+        return this.buildService.GetBuildScore(build);
     }
 }

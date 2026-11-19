@@ -42,6 +42,9 @@ La documentazione tecnica completa è in [`documentazione.html`](documentazione.
 Requisiti: Node.js 24, Docker, Python 3 con `playwright`, `beautifulsoup4` e `pymysql`.
 
 ```bash
+# 0. Credenziali del database (poi scegli le password in .env)
+cp .env.example .env
+
 # 1. Database
 docker compose up -d
 
@@ -50,7 +53,7 @@ cd script
 python main.py
 python update_db.py
 
-# 3. API (crea prima api/.env con le variabili del database, i segreti JWT e PORT=3636)
+# 3. API (crea prima api/.env con le variabili del database e i segreti JWT)
 cd ../api
 npm install
 npm run start:dev
