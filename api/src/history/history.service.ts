@@ -1,11 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { HistoryEntity } from './history.entity.js';
 import { CreateHistoryDto, HistoryItemDto } from './history.dto.js';
 
-// Opening the same game again within this time updates its entry instead of adding one.
-export const REPEAT_WINDOW_MS = 10 * 60 * 1000;
 // Entries kept per user; older ones are deleted.
 export const MAX_ENTRIES = 100;
 
@@ -52,20 +50,9 @@ export class HistoryService {
       Failed: dto.Failed,
       ToCheck: dto.ToCheck,
     };
-    const recent = await this.repo.findOne({
-      where: {
-        UserId: userId,
-        AppId: dto.AppId,
-        updated_at: MoreThan(new Date(Date.now() - REPEAT_WINDOW_MS)),
-      },
-      order: { updated_at: 'DESC' },
-    });
-    const saved = await this.repo.save(
-      recent
-        ? // Set by hand: TypeORM only bumps it when another column changed.
-          this.repo.merge(recent, { ...values, updated_at: new Date() })
-        : this.repo.create({ ...values, UserId: userId }),
-    );
+    // Every comparison is its own entry, also when the same game is tested again: the app
+    // records each comparison page once, so reloads don't add duplicates.
+    const saved = await this.repo.save(this.repo.create({ ...values, UserId: userId }));
     await this.trim(userId);
     return toItem(saved);
   }

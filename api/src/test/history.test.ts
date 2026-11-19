@@ -48,16 +48,16 @@ describe('HistoryService', () => {
     expect(item).not.toHaveProperty('UserId');
   });
 
-  it('updates the recent entry for the same game instead of adding another', async () => {
-    repo.findOne.mockResolvedValue({ id: 5, UserId: 42, AppId: 1091500, Met: 2 });
-    const item = await service.record(42, { ...DTO, Met: 3, Failed: 1 });
-    expect(repo.create).not.toHaveBeenCalled();
-    expect(repo.merge).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 5 }),
-      expect.objectContaining({ Met: 3, Failed: 1, updated_at: expect.any(Date) }),
-    );
-    expect(item).toMatchObject({ id: 5, Met: 3, Failed: 1 });
-    expect(repo.findOne.mock.calls[0][0].where).toMatchObject({ UserId: 42, AppId: 1091500 });
+  it('adds a new entry every time, also for the same game tested again', async () => {
+    const saved = (id: number) => async (entry: object) => ({ id, created_at: new Date(0), updated_at: new Date(0), ...entry });
+    repo.save.mockImplementationOnce(saved(9)).mockImplementationOnce(saved(10));
+    const first = await service.record(42, DTO);
+    const second = await service.record(42, { ...DTO, Met: 3, Failed: 1 });
+    expect(repo.create).toHaveBeenCalledTimes(2);
+    expect(repo.merge).not.toHaveBeenCalled();
+    expect(repo.findOne).not.toHaveBeenCalled();
+    expect([first.id, second.id]).toEqual([9, 10]);
+    expect(second).toMatchObject({ AppId: 1091500, Met: 3, Failed: 1 });
   });
 
   it('keeps only the newest entries per user', async () => {

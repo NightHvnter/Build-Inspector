@@ -107,8 +107,8 @@ export function CompareGame(): JSX.Element {
   )
   const loading = steam.loading || scan.scanning || hardware.loading
 
-  // Save each finished comparison once (a new scan counts as a new one). The API merges
-  // repeats of the same game within a few minutes, so a reload doesn't add an entry.
+  // Save each finished comparison once per visit of this page (a new scan counts as a new
+  // one): testing the same game again adds another entry to the history.
   const [historyError, setHistoryError] = useState<string | null>(null)
   const recorded = useRef<string | null>(null)
   const pc = scan.pc
