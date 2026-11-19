@@ -1,6 +1,6 @@
 {
   "name": "build_inspector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Confronta i requisiti dei giochi Steam con i componenti del tuo PC.",
   "main": "./out/main/index.js",
   "author": {
